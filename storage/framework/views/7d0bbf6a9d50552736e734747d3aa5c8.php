@@ -13,6 +13,7 @@
     <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700" rel="stylesheet" />
 
     <!-- Scripts -->
+    <?php echo app('Illuminate\Foundation\Vite')->reactRefresh(); ?>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/main.jsx', ]); ?>
 </head>
 <body class="antialiased">

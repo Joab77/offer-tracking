@@ -13,6 +13,7 @@
     <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700" rel="stylesheet" />
 
     <!-- Scripts -->
+    @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/main.jsx', ])
 </head>
 <body class="antialiased">
