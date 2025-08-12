@@ -19,9 +19,9 @@ import UserProfile from './components/user/Profile';
 // Admin Components
 import AdminLayout from './components/layouts/AdminLayout';
 import AdminDashboard from './components/admin/Dashboard';
-// import UserManagement from './components/admin/UserManagement';
+import UserManagement from './components/admin/UserManagement';
 import OfferManagement from './components/admin/OfferManagement';
-// import ParticipationManagement from './components/admin/ParticipationManagement';
+import ParticipationManagement from './components/admin/ParticipationManagement';
 
 // Loading Component
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -54,9 +54,9 @@ function App() {
             {/* Routes admin */}
             <Route path="/admin" element={user?.is_admin ? <AdminLayout /> : <Navigate to="/login" />}>
                 <Route index element={<AdminDashboard />} />
-                {/*<Route path="users" element={<UserManagement />} />*/}
+                <Route path="users" element={<UserManagement />} />
                 <Route path="offers" element={<OfferManagement />} />
-                {/*<Route path="participations" element={<ParticipationManagement />} />*/}
+                <Route path="participations" element={<ParticipationManagement />} />
             </Route>
 
             {/* Route par défaut */}

@@ -1,37 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PencilIcon, TrashIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import LoadingSpinner from '../common/LoadingSpinner';
+import {
+    TagIcon,
+    PlusIcon,
+    PencilIcon,
+    TrashIcon,
+    EyeIcon,
+    MagnifyingGlassIcon,
+    FunnelIcon,
+} from '@heroicons/react/24/outline';
 
-const initialFormState = {
-    title: '',
-    description: '',
-    commission: '',
-    country: '',
-    image_url: '',
-};
+const schema = yup.object({
+    title: yup.string().required('Titre requis').min(3, 'Le titre doit contenir au moins 3 caractères'),
+    description: yup.string().required('Description requise').min(10, 'La description doit contenir au moins 10 caractères'),
+    image_url: yup.string().url('URL invalide').nullable(),
+    commission: yup.number().required('Commission requise').min(0, 'La commission doit être positive'),
+    country: yup.string().required('Pays requis'),
+    daisycon_url: yup.string().required('URL Daisycon requise').url('URL invalide'),
+    api_key: yup.string().nullable(),
+});
+
+const countries = [
+    { code: 'FR', name: 'France' },
+    { code: 'BE', name: 'Belgique' },
+    { code: 'CH', name: 'Suisse' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'DE', name: 'Allemagne' },
+    { code: 'ES', name: 'Espagne' },
+    { code: 'IT', name: 'Italie' },
+];
 
 const OfferManagement = () => {
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [search, setSearch] = useState('');
+    const [countryFilter, setCountryFilter] = useState('all');
+    const [showModal, setShowModal] = useState(false);
+    const [editingOffer, setEditingOffer] = useState(null);
+    const [selectedOffer, setSelectedOffer] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [deleting, setDeleting] = useState(null);
 
-    // Modal & form states
-    const [modalOpen, setModalOpen] = useState(false);
-    const [form, setForm] = useState(initialFormState);
-    const [formErrors, setFormErrors] = useState({});
-    const [editingOfferId, setEditingOfferId] = useState(null);
-    const [saving, setSaving] = useState(false);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset,
+        setValue,
+    } = useForm({
+        resolver: yupResolver(schema),
+    });
 
     useEffect(() => {
         fetchOffers(currentPage);
-    }, [currentPage]);
+    }, [currentPage, search, countryFilter]);
 
     const fetchOffers = async (page = 1) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/admin/offers?page=${page}`);
+            let url = `/api/admin/offers?page=${page}`;
+
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+
+            if (countryFilter !== 'all') {
+                url += `&country=${countryFilter}`;
+            }
+
+            const response = await axios.get(url);
             setOffers(response.data.data);
             setPagination({
                 current_page: response.data.current_page,
@@ -40,312 +85,618 @@ const OfferManagement = () => {
                 per_page: response.data.per_page,
             });
         } catch (error) {
-            alert('Erreur lors du chargement des offres.');
-            console.error(error);
+            console.error('Erreur lors du chargement des offres:', error);
+            toast.error('Erreur lors du chargement des offres');
         } finally {
             setLoading(false);
         }
+    };
+
+    const openCreateModal = () => {
+        setEditingOffer(null);
+        reset();
+        setShowModal(true);
+    };
+
+    const openEditModal = (offer) => {
+        setEditingOffer(offer);
+        setValue('title', offer.title);
+        setValue('description', offer.description);
+        setValue('image_url', offer.image_url || '');
+        setValue('commission', offer.commission);
+        setValue('country', offer.country);
+        setValue('daisycon_url', offer.daisycon_url);
+        setValue('api_key', offer.api_key || '');
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditingOffer(null);
+        reset();
+    };
+
+    const onSubmit = async (data) => {
+        try {
+            setSubmitting(true);
+
+            if (editingOffer) {
+                await axios.put(`/api/admin/offers/${editingOffer.id}`, data);
+                toast.success('Offre modifiée avec succès !');
+            } else {
+                await axios.post('/api/admin/offers', data);
+                toast.success('Offre créée avec succès !');
+            }
+
+            closeModal();
+            fetchOffers(currentPage);
+        } catch (error) {
+            const message = error.response?.data?.message || 'Erreur lors de la sauvegarde';
+            toast.error(message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (offerId) => {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) {
+            return;
+        }
+
+        try {
+            setDeleting(offerId);
+            await axios.delete(`/api/admin/offers/${offerId}`);
+            toast.success('Offre supprimée avec succès !');
+            fetchOffers(currentPage);
+        } catch (error) {
+            const message = error.response?.data?.message || 'Erreur lors de la suppression';
+            toast.error(message);
+        } finally {
+            setDeleting(null);
+        }
+    };
+
+    const openDetailModal = (offer) => {
+        setSelectedOffer(offer);
+        setShowDetailModal(true);
+    };
+
+    const closeDetailModal = () => {
+        setSelectedOffer(null);
+        setShowDetailModal(false);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleCountryFilterChange = (country) => {
+        setCountryFilter(country);
+        setCurrentPage(1);
     };
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    const openModalForCreate = () => {
-        setEditingOfferId(null);
-        setForm(initialFormState);
-        setFormErrors({});
-        setModalOpen(true);
+    const getCountryName = (code) => {
+        const country = countries.find(c => c.code === code);
+        return country ? country.name : code;
     };
 
-    const openModalForEdit = (offer) => {
-        setEditingOfferId(offer.id);
-        setForm({
-            title: offer.title || '',
-            description: offer.description || '',
-            commission: offer.commission || '',
-            country: offer.country || '',
-            image_url: offer.image_url || '',
-        });
-        setFormErrors({});
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        if (saving) return; // Prevent close while saving
-        setModalOpen(false);
-    };
-
-    const validateForm = () => {
-        const errors = {};
-        if (!form.title.trim()) errors.title = 'Le titre est obligatoire.';
-        if (!form.commission || isNaN(form.commission)) errors.commission = 'La commission doit être un nombre.';
-        if (!form.country.trim()) errors.country = 'Le pays est obligatoire.';
-        // Ajoute d'autres validations si besoin
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
-        setSaving(true);
-        try {
-            if (editingOfferId) {
-                // Modifier
-                await axios.put(`/api/admin/offers/${editingOfferId}`, form);
-                alert('Offre mise à jour avec succès.');
-            } else {
-                // Créer
-                await axios.post('/api/admin/offers', form);
-                alert('Offre créée avec succès.');
-            }
-            setModalOpen(false);
-            fetchOffers(currentPage);
-        } catch (error) {
-            alert('Erreur lors de la sauvegarde.');
-            console.error(error);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('Voulez-vous vraiment supprimer cette offre ?')) return;
-        try {
-            await axios.delete(`/api/admin/offers/${id}`);
-            setOffers(offers.filter(o => o.id !== id));
-            alert('Offre supprimée.');
-        } catch (error) {
-            alert('Erreur lors de la suppression.');
-            console.error(error);
-        }
-    };
+    if (loading && currentPage === 1) {
+        return <LoadingSpinner />;
+    }
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* En-tête */}
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Gestion des offres</h1>
-                    <p className="mt-1 text-sm text-gray-600">Ajoutez, modifiez ou supprimez des offres d'affiliation.</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                        Créez et gérez les offres d'affiliation disponibles sur la plateforme.
+                    </p>
                 </div>
                 <button
-                    onClick={openModalForCreate}
+                    onClick={openCreateModal}
                     className="btn-primary flex items-center space-x-2"
-                    disabled={loading}
                 >
                     <PlusIcon className="h-5 w-5" />
                     <span>Nouvelle offre</span>
                 </button>
             </div>
 
-            {/* Table */}
-            {loading && currentPage === 1 ? (
-                <LoadingSpinner />
-            ) : offers.length > 0 ? (
-                <div className="overflow-x-auto bg-white rounded-lg shadow">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titre</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pays</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission (€)</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                        {offers.map(offer => (
-                            <tr key={offer.id}>
-                                <td className="px-6 py-4 text-sm text-gray-900">{offer.title}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{offer.country}</td>
-                                <td className="px-6 py-4 text-sm text-green-600 font-medium">{offer.commission}</td>
-                                <td className="px-6 py-4 text-right space-x-2">
-                                    <button
-                                        onClick={() => openModalForEdit(offer)}
-                                        className="text-blue-600 hover:text-blue-800"
-                                        disabled={saving}
-                                        title="Modifier"
-                                    >
-                                        <PencilIcon className="h-5 w-5 inline" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(offer.id)}
-                                        className="text-red-600 hover:text-red-800"
-                                        disabled={saving}
-                                        title="Supprimer"
-                                    >
-                                        <TrashIcon className="h-5 w-5 inline" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-
-                    {/* Pagination */}
-                    {pagination && pagination.last_page > 1 && (
-                        <div className="flex justify-center space-x-2 mt-4">
-                            {[...Array(pagination.last_page)].map((_, index) => {
-                                const page = index + 1;
-                                return (
-                                    <button
-                                        key={page}
-                                        onClick={() => handlePageChange(page)}
-                                        disabled={loading || saving}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium ${
-                                            page === pagination.current_page
-                                                ? 'bg-primary-600 text-white'
-                                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        {page}
-                                    </button>
-                                );
-                            })}
+            {/* Filtres et recherche */}
+            <div className="card">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Recherche */}
+                    <div className="flex-1">
+                        <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Rechercher une offre..."
+                                value={search}
+                                onChange={handleSearchChange}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            />
                         </div>
-                    )}
+                    </div>
+
+                    {/* Filtre par pays */}
+                    <div className="flex items-center space-x-2">
+                        <FunnelIcon className="h-5 w-5 text-gray-400" />
+                        <select
+                            value={countryFilter}
+                            onChange={(e) => handleCountryFilterChange(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                            <option value="all">Tous les pays</option>
+                            {countries.map((country) => (
+                                <option key={country.code} value={country.code}>
+                                    {country.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            ) : (
-                <div className="text-center py-12">
-                    <p className="text-sm font-medium text-gray-900">Aucune offre trouvée</p>
-                    <p className="mt-1 text-sm text-gray-500">Créez votre première offre en cliquant sur “Nouvelle offre”.</p>
+            </div>
+
+            {/* Liste des offres */}
+            <div className="card">
+                {offers.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Offre
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Commission
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Pays
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Créée le
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                            {offers.map((offer) => (
+                                <tr key={offer.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center">
+                                            {offer.image_url && (
+                                                <div className="flex-shrink-0 h-10 w-10">
+                                                    <img
+                                                        className="h-10 w-10 rounded-lg object-cover"
+                                                        src={offer.image_url}
+                                                        alt={offer.title}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className={offer.image_url ? 'ml-4' : ''}>
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {offer.title}
+                                                </div>
+                                                <div className="text-sm text-gray-500 max-w-xs truncate">
+                                                    {offer.description}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm font-medium text-green-600">
+                                                {offer.commission}€
+                                            </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                {getCountryName(offer.country)}
+                                            </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {new Date(offer.created_at).toLocaleDateString('fr-FR')}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex items-center justify-end space-x-2">
+                                            <button
+                                                onClick={() => openDetailModal(offer)}
+                                                className="text-primary-600 hover:text-primary-900 p-1"
+                                                title="Voir les détails"
+                                            >
+                                                <EyeIcon className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => openEditModal(offer)}
+                                                className="text-blue-600 hover:text-blue-900 p-1"
+                                                title="Modifier"
+                                            >
+                                                <PencilIcon className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(offer.id)}
+                                                disabled={deleting === offer.id}
+                                                className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Supprimer"
+                                            >
+                                                {deleting === offer.id ? (
+                                                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <TrashIcon className="h-4 w-4" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="text-center py-12">
+                        <TagIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune offre</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Commencez par créer votre première offre d'affiliation.
+                        </p>
+                        <div className="mt-6">
+                            <button
+                                onClick={openCreateModal}
+                                className="btn-primary flex items-center space-x-2 mx-auto"
+                            >
+                                <PlusIcon className="h-5 w-5" />
+                                <span>Nouvelle offre</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Pagination */}
+            {pagination && pagination.last_page > 1 && (
+                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg">
+                    <div className="flex flex-1 justify-between sm:hidden">
+                        <button
+                            onClick={() => handlePageChange(pagination.current_page - 1)}
+                            disabled={pagination.current_page === 1 || loading}
+                            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Précédent
+                        </button>
+                        <button
+                            onClick={() => handlePageChange(pagination.current_page + 1)}
+                            disabled={pagination.current_page === pagination.last_page || loading}
+                            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Suivant
+                        </button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm text-gray-700">
+                                Affichage de{' '}
+                                <span className="font-medium">
+                                    {(pagination.current_page - 1) * pagination.per_page + 1}
+                                </span>{' '}
+                                à{' '}
+                                <span className="font-medium">
+                                    {Math.min(pagination.current_page * pagination.per_page, pagination.total)}
+                                </span>{' '}
+                                sur{' '}
+                                <span className="font-medium">{pagination.total}</span> résultats
+                            </p>
+                        </div>
+                        <div>
+                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                <button
+                                    onClick={() => handlePageChange(pagination.current_page - 1)}
+                                    disabled={pagination.current_page === 1 || loading}
+                                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Précédent
+                                </button>
+                                {[...Array(Math.min(pagination.last_page, 5))].map((_, index) => {
+                                    let page;
+                                    if (pagination.last_page <= 5) {
+                                        page = index + 1;
+                                    } else {
+                                        const start = Math.max(1, pagination.current_page - 2);
+                                        page = start + index;
+                                    }
+
+                                    if (page > pagination.last_page) return null;
+
+                                    return (
+                                        <button
+                                            key={page}
+                                            onClick={() => handlePageChange(page)}
+                                            disabled={loading}
+                                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                                page === pagination.current_page
+                                                    ? 'z-10 bg-primary-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600'
+                                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        >
+                                            {page}
+                                        </button>
+                                    );
+                                })}
+                                <button
+                                    onClick={() => handlePageChange(pagination.current_page + 1)}
+                                    disabled={pagination.current_page === pagination.last_page || loading}
+                                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Suivant
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            {/* Modal formulaire */}
-            {modalOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-                    onClick={closeModal}
-                >
-                    <div
-                        className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative"
-                        onClick={e => e.stopPropagation()} // Empêche la fermeture en cliquant dans la boîte
-                    >
-                        <button
-                            onClick={closeModal}
-                            disabled={saving}
-                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-                            aria-label="Fermer"
-                        >
-                            <XMarkIcon className="h-6 w-6" />
-                        </button>
-
-                        <h2 className="text-xl font-bold mb-4">{editingOfferId ? 'Modifier l\'offre' : 'Nouvelle offre'}</h2>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                                    Titre
-                                </label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    id="title"
-                                    value={form.title}
-                                    onChange={handleChange}
-                                    className={`input-field ${formErrors.title ? 'border-red-500' : ''}`}
-                                    disabled={saving}
-                                />
-                                {formErrors.title && (
-                                    <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    name="description"
-                                    id="description"
-                                    value={form.description}
-                                    onChange={handleChange}
-                                    className="input-field"
-                                    disabled={saving}
-                                    rows={4}
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="commission" className="block text-sm font-medium text-gray-700">
-                                    Commission (€)
-                                </label>
-                                <input
-                                    type="number"
-                                    name="commission"
-                                    id="commission"
-                                    value={form.commission}
-                                    onChange={handleChange}
-                                    className={`input-field ${formErrors.commission ? 'border-red-500' : ''}`}
-                                    disabled={saving}
-                                    step="0.01"
-                                    min="0"
-                                />
-                                {formErrors.commission && (
-                                    <p className="text-red-500 text-xs mt-1">{formErrors.commission}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                                    Pays
-                                </label>
-                                <input
-                                    type="text"
-                                    name="country"
-                                    id="country"
-                                    value={form.country}
-                                    onChange={handleChange}
-                                    className={`input-field ${formErrors.country ? 'border-red-500' : ''}`}
-                                    disabled={saving}
-                                />
-                                {formErrors.country && (
-                                    <p className="text-red-500 text-xs mt-1">{formErrors.country}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">
-                                    URL de l'image (optionnel)
-                                </label>
-                                <input
-                                    type="text"
-                                    name="image_url"
-                                    id="image_url"
-                                    value={form.image_url}
-                                    onChange={handleChange}
-                                    className="input-field"
-                                    disabled={saving}
-                                />
-                            </div>
-
-                            <div className="flex justify-end space-x-2">
+            {/* Modal création/modification */}
+            {showModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    {editingOffer ? 'Modifier l\'offre' : 'Nouvelle offre'}
+                                </h3>
                                 <button
-                                    type="button"
                                     onClick={closeModal}
-                                    disabled={saving}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Titre de l'offre
+                                        </label>
+                                        <input
+                                            {...register('title')}
+                                            type="text"
+                                            className="input-field mt-1"
+                                            placeholder="Titre de l'offre"
+                                        />
+                                        {errors.title && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            {...register('description')}
+                                            rows={3}
+                                            className="input-field mt-1"
+                                            placeholder="Description de l'offre"
+                                        />
+                                        {errors.description && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Commission (€)
+                                        </label>
+                                        <input
+                                            {...register('commission')}
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            className="input-field mt-1"
+                                            placeholder="25.50"
+                                        />
+                                        {errors.commission && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.commission.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Pays
+                                        </label>
+                                        <select
+                                            {...register('country')}
+                                            className="input-field mt-1"
+                                        >
+                                            <option value="">Sélectionnez un pays</option>
+                                            {countries.map((country) => (
+                                                <option key={country.code} value={country.code}>
+                                                    {country.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.country && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            URL de l'image (optionnel)
+                                        </label>
+                                        <input
+                                            {...register('image_url')}
+                                            type="url"
+                                            className="input-field mt-1"
+                                            placeholder="https://example.com/image.jpg"
+                                        />
+                                        {errors.image_url && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.image_url.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            URL Daisycon
+                                        </label>
+                                        <input
+                                            {...register('daisycon_url')}
+                                            type="url"
+                                            className="input-field mt-1"
+                                            placeholder="https://daisycon.io/click?a=123&c=456&p=789"
+                                        />
+                                        {errors.daisycon_url && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.daisycon_url.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Clé API Daisycon (optionnel)
+                                        </label>
+                                        <input
+                                            {...register('api_key')}
+                                            type="text"
+                                            className="input-field mt-1"
+                                            placeholder="Clé API pour le suivi des conversions"
+                                        />
+                                        {errors.api_key && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.api_key.message}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="btn-secondary"
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submitting ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <span>{editingOffer ? 'Modifier' : 'Créer'}</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal détails offre */}
+            {showDetailModal && selectedOffer && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    Détails de l'offre
+                                </h3>
+                                <button
+                                    onClick={closeDetailModal}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                {selectedOffer.image_url && (
+                                    <div>
+                                        <img
+                                            src={selectedOffer.image_url}
+                                            alt={selectedOffer.title}
+                                            className="w-full h-48 object-cover rounded-lg"
+                                        />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Titre</label>
+                                    <p className="mt-1 text-sm text-gray-900">{selectedOffer.title}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <p className="mt-1 text-sm text-gray-900">{selectedOffer.description}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Commission</label>
+                                        <p className="mt-1 text-sm text-gray-900 font-medium text-green-600">
+                                            {selectedOffer.commission}€
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Pays</label>
+                                        <p className="mt-1 text-sm text-gray-900">{getCountryName(selectedOffer.country)}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">URL Daisycon</label>
+                                    <p className="mt-1 text-sm text-gray-900 break-all">{selectedOffer.daisycon_url}</p>
+                                </div>
+                                {selectedOffer.api_key && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Clé API</label>
+                                        <p className="mt-1 text-sm text-gray-900 font-mono">{selectedOffer.api_key}</p>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Date de création</label>
+                                    <p className="mt-1 text-sm text-gray-900">
+                                        {new Date(selectedOffer.created_at).toLocaleDateString('fr-FR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end space-x-3">
+                                <button
+                                    onClick={closeDetailModal}
                                     className="btn-secondary"
                                 >
-                                    Annuler
+                                    Fermer
                                 </button>
                                 <button
-                                    type="submit"
-                                    disabled={saving}
+                                    onClick={() => {
+                                        closeDetailModal();
+                                        openEditModal(selectedOffer);
+                                    }}
                                     className="btn-primary"
                                 >
-                                    {saving ? 'Enregistrement...' : 'Enregistrer'}
+                                    Modifier
                                 </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
+                </div>
+            )}
+
+            {loading && currentPage > 1 && (
+                <div className="flex justify-center py-4">
+                    <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             )}
         </div>
