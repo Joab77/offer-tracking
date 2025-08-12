@@ -44,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Gestion des offres
         Route::get('/offers', [AdminOfferController::class, 'index']);
         Route::post('/offers', [AdminOfferController::class, 'store']);
+        Route::put('/offers/{offer}', [AdminOfferController::class, 'update']);
+        Route::delete('/offers/{offer}', [AdminOfferController::class, 'destroy']);
 
         // Gestion des participations
         Route::get('/participations', [AdminParticipationController::class, 'index']);
