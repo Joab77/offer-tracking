@@ -25,6 +25,9 @@ import ParticipationManagement from './components/admin/ParticipationManagement'
 
 // Loading Component
 import LoadingSpinner from './components/common/LoadingSpinner';
+// Landing  Page
+import Landing from './components/landing'; 
+
 
 function App() {
     const { user, loading } = useAuth();
@@ -35,6 +38,8 @@ function App() {
 
     return (
         <Routes>
+            {/* Landing page publique */}
+            <Route path="/" element={<Landing />} />
             {/* Routes publiques */}
             <Route path="/login" element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/dashboard"} />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
@@ -42,7 +47,8 @@ function App() {
             <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
 
             {/* Routes utilisateur */}
-            <Route path="/" element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}>
+            
+            <Route path="/app" element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}>
                 <Route index element={<Navigate to="/dashboard" />} />
                 <Route path="dashboard" element={<UserDashboard />} />
                 <Route path="offers" element={<OffersList />} />
