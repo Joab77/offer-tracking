@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\ParticipationController;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +28,23 @@ Route::middleware('auth:sanctum')->group(function () {
     // Routes d'authentification pour utilisateurs connectés
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::get('/location', function (\Illuminate\Http\Request $request) {
+        $lat = $request->query('lat');
+        $lng = $request->query('lng');
+        $apiKey = env('OPENCAGE_API_KEY');
+
+        $response = Http::get('https://api.opencagedata.com/geocode/v1/json', [
+            'key' => $apiKey,
+            'q' => $lat . ',' . $lng,
+            'pretty' => 1,
+            'no_annotations' => 1,
+        ]);
+
+        return $response->json();
+    });
+
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // Routes utilisateur (nécessitent validation)
     Route::middleware('validated')->group(function () {

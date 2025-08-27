@@ -13,6 +13,10 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    build: {
+        outDir: 'public/react',
+        emptyOutDir: true
+    },
     resolve: {
         alias: {
             '@': '/resources/js',

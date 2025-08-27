@@ -14,6 +14,7 @@ const schema = yup.object({
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [serverError, setServerError] = useState(null);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -27,11 +28,23 @@ const Login = () => {
 
     const onSubmit = async (data) => {
         setIsLoading(true);
-        const result = await login(data);
-        setIsLoading(false);
+        setServerError(null);
 
-        if (result.success) {
-            navigate('/dashboard');
+        try {
+            const result = await login(data);
+
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                console.log("message", result)
+                // si login() renvoie un message d’erreur
+                setServerError(result.message || result.error || 'Échec de connexion. Vérifiez vos identifiants.');
+            }
+        } catch (err) {
+            // si une exception survient (ex: serveur down, API non dispo)
+            setServerError('Une erreur est survenue. Merci de réessayer plus tard.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -40,10 +53,8 @@ const Login = () => {
             <div className="max-w-md w-full">
                 {/* Logo et titre */}
                 <div className="text-center mb-8">
-                    <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                    <div className="mx-auto h-16 w-48 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg text-white font-bold  text-xl">
+                        GainsExprex
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Bon retour !</h1>
                     <p className="text-gray-600">Connectez-vous à votre compte pour continuer</p>
@@ -51,6 +62,12 @@ const Login = () => {
 
                 {/* Formulaire */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+                    {serverError && (
+                        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                            {serverError}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">

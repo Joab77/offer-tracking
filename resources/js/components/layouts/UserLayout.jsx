@@ -31,7 +31,7 @@ const UserLayout = () => {
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
                                 <h1 className="text-xl font-bold text-gray-900">
-                                    Plateforme d'Affiliation
+                                    Gainexpres
                                 </h1>
                             </div>
                             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

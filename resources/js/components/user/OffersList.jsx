@@ -3,21 +3,29 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { TagIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline';
+import {useLocation} from "@/hooks/useLocation.jsx";
 
 const OffersList = () => {
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const { country, code, loading: geoLoading } = useLocation();
 
     useEffect(() => {
-        fetchOffers(currentPage);
-    }, [currentPage]);
+        if (!geoLoading && code) {
+            fetchOffers(currentPage, code);
+        }
+    }, [currentPage, geoLoading, code]);
 
-    const fetchOffers = async (page = 1) => {
+    const fetchOffers = async (page = 1, userCountry) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/offers?page=${page}`);
+            const response = await axios.get(`/api/offers?page=${page}`, {
+                headers: {
+                    'X-Country': userCountry
+                }
+            });
             setOffers(response.data.data);
             setPagination({
                 current_page: response.data.current_page,
