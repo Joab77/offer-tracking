@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 
 const LandingPage = () => {
@@ -13,7 +14,7 @@ const LandingPage = () => {
 
 
   // Textes à afficher avec l'effet typing  
-  const texts = ['Solutions Digitales Modernes', 'Créativité & Innovation', 'Excellence Technique'];
+  const texts = ['Gagnez de l\'argent en', 'ligne avec Gain', 'Gains Exprex'];
 
   // Détection du scroll
   useEffect(() => {
@@ -30,31 +31,22 @@ const LandingPage = () => {
   const menuItems = [
     {
       name: 'Accueil',
-      link: '#hero'
+      link: '/'
     },
     {
-      name: 'Services',
-      link: '#services',
+      name: 'Missions',
+      link: '#missions',
       submenu: [
-        { name: 'Développement Web', link: '#web-dev' },
-        { name: 'Applications Mobiles', link: '#mobile-apps' },
-        { name: 'Marketing Digital', link: '#marketing' },
-        { name: 'Solutions Cloud', link: '#cloud' }
+        { name: 'Décrocher une mission', 
+        link: '/register',
+        className: 'whitespace-nowrap' 
+ },
+    
       ]
     },
     {
-      name: 'À propos',
-      link: '#about'
-    },
-    {
-      name: 'Projets',
-      link: '#projects',
-      submenu: [
-        { name: 'Tous les projets', link: '#all-projects' },
-        { name: 'Design', link: '#design' },
-        { name: 'Développement', link: '#development' },
-        { name: 'Marketing', link: '#marketing-projects' }
-      ]
+      name: 'F.A.Q',
+      link: '#faq'
     },
     {
       name: 'Contact',
@@ -93,26 +85,35 @@ const LandingPage = () => {
          {/* Navigation */}
       <header className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-md' : 'bg-transparent'}`}>
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-8">
             {/* Logo */}
-            <div className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${scrolled ? 'bg-indigo-600' : 'bg-white'}`}>
-                <span className={`font-bold ${scrolled ? 'text-white' : 'text-indigo-600'}`}>L</span>
-              </div>
-              <span className={`text-xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>GainsExprex</span>
-            </div>
+            <div className="flex items-center pl-4">
+             <a href="/" className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${scrolled ? 'bg-indigo-600' : 'bg-white'}`}>
+                <span className={`font-bold ${scrolled ? 'text-white' : 'text-indigo-600'}`}>G</span>
+                </div>
+                <span className={`text-xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>GainsExprex</span>
+            </a>
+             </div>
 
             {/* Menu Desktop */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-8 pr-4">
               {menuItems.map((item, index) => (
                 <div key={index} className="relative group">
-                  <a 
-                    href={item.link} 
-                    className={`transition duration-300 ${scrolled ? 'text-gray-700 hover:text-indigo-600' : 'text-white hover:text-indigo-200'}`}
-                  >
+
+
+                    <motion.a 
+                    href={item.link}
+                    whileHover={{ 
+                        scale: 1.05,
+                        color: '#6366F1',
+                        transition: { duration: 0.3 }
+                    }}
+                    className={`py-2 px-4 ${scrolled ? 'text-gray-700' : 'text-white'}`}
+                    >
                     {item.name}
-                  </a>
-                  
+                    </motion.a>
+               
                   {/* Sous-menu */}
                   {item.submenu && (
                     <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
@@ -120,7 +121,7 @@ const LandingPage = () => {
                         <a 
                           key={subIndex} 
                           href={subItem.link} 
-                          className="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-300"
+                          className={`block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-300 ${subItem.className || ''}`}
                         >
                           {subItem.name}
                         </a>
@@ -200,15 +201,18 @@ const LandingPage = () => {
             </h1>
           </div>
           
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">Nous transformons vos idées en réalité numérique avec des solutions innovantes et sur mesure</p>
+          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">Transformez votre audience en revenus avec une plateforme parfaitement calibrée</p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 transform hover:-translate-y-1">
+            <a 
+              href="/register"  
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 transform hover:-translate-y-1 text-center">
               Commencer
-            </button>
-            <button className="bg-transparent hover:bg-white text-white hover:text-gray-800 font-bold py-3 px-8 border-2 border-white rounded-full transition duration-300">
+            </a>
+            <a 
+    href="#services"  className="bg-transparent hover:bg-white text-white hover:text-gray-800 font-bold py-3 px-8 border-2 border-white rounded-full transition duration-300 text-center">
               En savoir plus
-            </button>
+            </a>
           </div>
         </div>
         
