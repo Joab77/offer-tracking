@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { UserIcon, EnvelopeIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import {useLocation} from "../../hooks/useLocation";
 
 const schema = yup.object({
     name: yup.string().required('Nom requis').min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -25,6 +26,7 @@ const countries = [
 const Profile = () => {
     const { user, checkAuth } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const { country, code, loading: loadingLocation, error: locationError } = useLocation();
 
     const {
         register,
@@ -35,8 +37,7 @@ const Profile = () => {
         resolver: yupResolver(schema),
         defaultValues: {
             name: user?.name || '',
-            email: user?.email || '',
-            pays: user?.pays || '',
+            email: user?.email || ''
         },
     });
 
@@ -49,7 +50,7 @@ const Profile = () => {
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la mise à jour';
             toast.error(message);
-            
+
             if (error.response?.data?.errors) {
                 Object.keys(error.response.data.errors).forEach((field) => {
                     setError(field, {
@@ -63,10 +64,6 @@ const Profile = () => {
         }
     };
 
-    const getCountryName = (code) => {
-        const country = countries.find(c => c.code === code);
-        return country ? country.name : code;
-    };
 
     return (
         <div className="space-y-6">
@@ -107,7 +104,11 @@ const Profile = () => {
                                     <GlobeAltIcon className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">{getCountryName(user?.pays)}</p>
+                                    {loadingLocation && <p>Chargement de la localisation...</p>}
+                                    {locationError && <p className="text-red-600">{locationError}</p>}
+                                    {!loadingLocation && !locationError && (
+                                        <p className="text-sm font-medium text-gray-900">{country}, {code}</p>
+                                    )}
                                     <p className="text-sm text-gray-500">Pays</p>
                                 </div>
                             </div>
@@ -120,8 +121,8 @@ const Profile = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Compte validé</span>
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        user?.validated 
-                                            ? 'bg-green-100 text-green-800' 
+                                        user?.validated
+                                            ? 'bg-green-100 text-green-800'
                                             : 'bg-yellow-100 text-yellow-800'
                                     }`}>
                                         {user?.validated ? 'Oui' : 'En attente'}
@@ -130,8 +131,8 @@ const Profile = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Type de compte</span>
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        user?.is_admin 
-                                            ? 'bg-purple-100 text-purple-800' 
+                                        user?.is_admin
+                                            ? 'bg-purple-100 text-purple-800'
                                             : 'bg-blue-100 text-blue-800'
                                     }`}>
                                         {user?.is_admin ? 'Administrateur' : 'Utilisateur'}
@@ -177,26 +178,6 @@ const Profile = () => {
                                 )}
                             </div>
 
-                            <div>
-                                <label htmlFor="pays" className="block text-sm font-medium text-gray-700">
-                                    Pays
-                                </label>
-                                <select
-                                    {...register('pays')}
-                                    className="input-field mt-1"
-                                    disabled
-                                >
-                                    <option value="">Sélectionnez votre pays</option>
-                                    {countries.map((country) => (
-                                        <option key={country.code} value={country.code}>
-                                            {country.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="mt-1 text-sm text-gray-500">
-                                    Le pays ne peut pas être modifié après l'inscription.
-                                </p>
-                            </div>
 
                             <div className="flex justify-end">
                                 <button

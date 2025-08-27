@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRules;
 
 class AuthController extends Controller
@@ -19,7 +20,6 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', PasswordRules::defaults()],
-            'pays' => 'required|string|size:2',
         ]);
 
         if ($validator->fails()) {
@@ -33,7 +33,6 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'pays' => strtoupper($request->pays),
         ]);
 
         $user->notify(new WelcomeNotification());
@@ -156,4 +155,34 @@ class AuthController extends Controller
             'message' => 'Erreur lors de la réinitialisation du mot de passe'
         ], 500);
     }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'password' => ['nullable', 'confirmed', 'min:8'],
+        ]);
+
+        // Mise à jour du nom et de l’email
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+
+        // Si un mot de passe est soumis → on le met à jour
+        if (!empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil mis à jour avec succès',
+            'user' => $user,
+        ]);
+    }
+
+
 }
