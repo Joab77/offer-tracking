@@ -11,25 +11,32 @@ class OfferController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
-        
-        $offers = Offer::where('country', $user->pays)
+        // Récupérer le code pays depuis l'en-tête
+        $country = $request->header('X-Country');
+
+        if(!$country) $country = 'BJ';
+
+        $offers = Offer::where('country', $country)
             ->latest()
             ->paginate(20);
+
 
         return response()->json($offers);
     }
 
     public function apply(Request $request, Offer $offer)
     {
-        $user = $request->user();
+        // Récupérer le code pays depuis l'en-tête
+        $country = $request->header('X-Country');
 
         // Vérifier si l'offre est pour le bon pays
-        if ($offer->country !== $user->pays) {
+        if ($offer->country !== $country) {
             return response()->json([
                 'message' => 'Cette offre n\'est pas disponible dans votre pays'
             ], 403);
         }
+
+        $user = $request->user();
 
         // Vérifier si l'utilisateur a déjà postulé
         $existingParticipation = Participation::where('user_id', $user->id)
