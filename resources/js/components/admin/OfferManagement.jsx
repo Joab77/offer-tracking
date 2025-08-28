@@ -25,15 +25,7 @@ const schema = yup.object({
     api_key: yup.string().nullable(),
 });
 
-const countries = [
-    { code: 'FR', name: 'France' },
-    { code: 'BE', name: 'Belgique' },
-    { code: 'CH', name: 'Suisse' },
-    { code: 'CA', name: 'Canada' },
-    { code: 'DE', name: 'Allemagne' },
-    { code: 'ES', name: 'Espagne' },
-    { code: 'IT', name: 'Italie' },
-];
+import countries from '../../utils/countries.json'
 
 const OfferManagement = () => {
     const [offers, setOffers] = useState([]);
