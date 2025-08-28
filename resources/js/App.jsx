@@ -25,6 +25,9 @@ import ParticipationManagement from './components/admin/ParticipationManagement'
 
 // Loading Component
 import LoadingSpinner from './components/common/LoadingSpinner';
+// Landing  Page
+import Landing from './components/landing';
+
 
 function App() {
     const { user, loading } = useAuth();
@@ -35,15 +38,33 @@ function App() {
 
     return (
         <Routes>
+            {/* Landing page publique */}
+            <Route path="/" element={<Landing />} />
+
             {/* Routes publiques */}
-            <Route path="/login" element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/dashboard"} />} />
-            <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
-            <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
-            <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
+            <Route
+                path="/login"
+                element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/app"} />}
+            />
+            <Route
+                path="/register"
+                element={!user ? <Register /> : <Navigate to="/app" />}
+            />
+            <Route
+                path="/forgot-password"
+                element={!user ? <ForgotPassword /> : <Navigate to="/app" />}
+            />
+            <Route
+                path="/reset-password"
+                element={!user ? <ResetPassword /> : <Navigate to="/app" />}
+            />
 
             {/* Routes utilisateur */}
-            <Route path="/" element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}>
-                <Route index element={<Navigate to="/dashboard" />} />
+            <Route
+                path="/app"
+                element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}
+            >
+                <Route index element={<Navigate to="dashboard" />} />
                 <Route path="dashboard" element={<UserDashboard />} />
                 <Route path="offers" element={<OffersList />} />
                 <Route path="offers/:id" element={<OfferDetail />} />
@@ -52,15 +73,21 @@ function App() {
             </Route>
 
             {/* Routes admin */}
-            <Route path="/admin" element={user?.is_admin ? <AdminLayout /> : <Navigate to="/login" />}>
+            <Route
+                path="/admin"
+                element={user?.is_admin ? <AdminLayout /> : <Navigate to="/login" />}
+            >
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="offers" element={<OfferManagement />} />
                 <Route path="participations" element={<ParticipationManagement />} />
             </Route>
 
-            {/* Route par défaut */}
-            <Route path="*" element={<Navigate to={user ? (user.is_admin ? "/admin" : "/dashboard") : "/login"} />} />
+            {/* Route par défaut pour toutes les routes inconnues */}
+            <Route
+                path="*"
+                element={<Navigate to={user ? (user.is_admin ? "/admin" : "/app") : "/login"} />}
+            />
         </Routes>
     );
 }
