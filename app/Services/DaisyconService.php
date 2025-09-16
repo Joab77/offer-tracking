@@ -2,129 +2,267 @@
 
 namespace App\Services;
 
-use App\Models\Offer;
 use App\Models\Participation;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DaisyconService
 {
-    private const BASE_URL = 'https://services.daisycon.com/publishers';
+    private const BASE_URL = 'https://services.daisycon.com';
+    private $accessToken;
+    private $publisherId;
 
-    public function getTransactions(string $apiKey, int $userId): array
+    public function __construct()
+    {
+        $this->publisherId = Setting::get('daisycon_publisher_id');
+    }
+
+    public function authenticate(): bool
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Accept' => 'application/json',
-            ])->get(self::BASE_URL . '/stats/transactions/', [
-                'subid' => 'user_' . $userId,
-                'per_page' => 100,
+            $username = Setting::get('daisycon_username');
+            $password = Setting::get('daisycon_password');
+
+            if (!$username || !$password || !$this->publisherId) {
+                Log::error('Daisycon credentials not configured');
+                return false;
+            }
+
+            $response = Http::post(self::BASE_URL . '/login', [
+                'username' => $username,
+                'password' => $password,
             ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $this->accessToken = $data['access_token'] ?? null;
+
+                if ($this->accessToken) {
+                    // Stocker le token temporairement (optionnel)
+                    Setting::set('daisycon_access_token', $this->accessToken, 'Token d\'accès temporaire', true);
+                    return true;
+                }
+            }
+
+            Log::error('Daisycon authentication failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Daisycon authentication exception', [
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    public function testConnection(): array
+    {
+        if (!$this->authenticate()) {
+            return [
+                'success' => false,
+                'message' => 'Échec de l\'authentification'
+            ];
+        }
+
+        try {
+            $response = Http::withToken($this->accessToken)
+                ->get(self::BASE_URL . "/publishers/{$this->publisherId}/transactions", [
+                    'limit' => 1
+                ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'message' => 'Connexion réussie à l\'API Daisycon'
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Erreur lors du test de connexion: ' . $response->status()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Exception: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function getTransactions(int $page = 1, int $limit = 100): array
+    {
+        try {
+            if (!$this->accessToken && !$this->authenticate()) {
+                return [];
+            }
+
+            $response = Http::withToken($this->accessToken)->get(
+                self::BASE_URL . "/publishers/{$this->publisherId}/transactions",
+                [
+                    'page' => $page,
+                    'limit' => $limit,
+                ]
+            );
 
             if ($response->successful()) {
                 return $response->json();
             }
 
-            Log::error('Erreur API Daisycon', [
+            Log::error('Erreur API Daisycon transactions', [
                 'status' => $response->status(),
                 'body' => $response->body(),
-                'user_id' => $userId,
             ]);
 
             return [];
         } catch (\Exception $e) {
-            Log::error('Exception lors de l\'appel API Daisycon', [
+            Log::error('Exception lors de l\'appel API Daisycon transactions', [
                 'message' => $e->getMessage(),
-                'user_id' => $userId,
             ]);
 
             return [];
         }
     }
 
-    public function syncParticipations(): void
+    public function syncTransactions(): int
     {
-        $participations = Participation::where('status', 'en_attente')
-            ->with(['user', 'offer'])
-            ->get();
-
-        foreach ($participations as $participation) {
-            $this->syncParticipation($participation);
-        }
-    }
-
-    private function syncParticipation(Participation $participation): void
-    {
-        $offer = $participation->offer;
-        
-        if (!$offer->api_key) {
-            Log::warning('Pas de clé API pour l\'offre', [
-                'offer_id' => $offer->id,
-                'participation_id' => $participation->id,
-            ]);
-            return;
+        if (!$this->authenticate()) {
+            Log::error('Impossible de s\'authentifier à Daisycon');
+            return 0;
         }
 
-        $transactions = $this->getTransactions($offer->api_key, $participation->user_id);
+        $syncedCount = 0;
+        $page = 1;
+        $hasMorePages = true;
 
-        if (empty($transactions['data'])) {
-            return;
-        }
+        while ($hasMorePages) {
+            $transactions = $this->getTransactions($page);
 
-        foreach ($transactions['data'] as $transaction) {
-            // Vérifier si la transaction correspond à cette participation
-            if ($this->isTransactionForParticipation($transaction, $participation)) {
-                $this->updateParticipationStatus($participation, $transaction);
+            if (empty($transactions['data'])) {
+                $hasMorePages = false;
+                continue;
+            }
+
+            foreach ($transactions['data'] as $transaction) {
+                if ($this->processTransaction($transaction)) {
+                    $syncedCount++;
+                }
+            }
+
+            // Vérifier s'il y a d'autres pages
+            $hasMorePages = isset($transactions['pagination']['has_next']) && $transactions['pagination']['has_next'];
+            $page++;
+
+            // Limite de sécurité pour éviter les boucles infinies
+            if ($page > 100) {
+                Log::warning('Limite de pages atteinte lors de la synchronisation Daisycon');
                 break;
             }
         }
+
+        Log::info("Synchronisation Daisycon terminée", [
+            'transactions_synchronized' => $syncedCount
+        ]);
+
+        return $syncedCount;
     }
 
-    private function isTransactionForParticipation(array $transaction, Participation $participation): bool
+    private function processTransaction(array $transaction): bool
     {
-        // Vérifier le subid
-        $expectedSubid = 'user_' . $participation->user_id;
-        
-        if (isset($transaction['subid']) && $transaction['subid'] === $expectedSubid) {
-            // Vérifier la date (la transaction doit être après le clic)
-            if (isset($transaction['date'])) {
-                $transactionDate = \Carbon\Carbon::parse($transaction['date']);
-                return $transactionDate->greaterThanOrEqualTo($participation->clicked_at);
+        try {
+            $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
+
+            if (!$affiliatemarketingId) {
+                return false;
             }
-            return true;
-        }
 
-        return false;
+            // Traiter chaque part de la transaction
+            foreach ($transaction['parts'] as $part) {
+                $this->processTransactionPart($transaction, $part);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du traitement de la transaction', [
+                'transaction' => $transaction,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 
-    private function updateParticipationStatus(Participation $participation, array $transaction): void
+    private function processTransactionPart(array $transaction, array $part): void
     {
-        $oldStatus = $participation->status;
-        
-        // Mapper le statut Daisycon vers notre statut
-        $newStatus = match ($transaction['status'] ?? 'pending') {
-            'approved', 'confirmed' => 'validee',
-            'rejected', 'declined' => 'refusee',
+        $affiliatemarketingId = $transaction['affiliatemarketing_id'];
+        $partId = $part['id'];
+        $uniqueId = $affiliatemarketingId . '_' . $partId;
+
+        // Mapper le statut Daisycon vers notre système
+        $status = $this->mapDaisyconStatus($part['status'] ?? 'pending');
+
+        $participationData = [
+            'affiliatemarketing_id' => $uniqueId,
+            'program_id' => $transaction['program_id'] ?? null,
+            'program_name' => $transaction['program_name'] ?? null,
+            'status' => $status,
+            'commission_earned' => $part['commission'] ?? 0,
+            'currency_code' => $part['currency_code'] ?? 'EUR',
+            'approval_date' => isset($part['approval_date']) ?
+                \Carbon\Carbon::parse($part['approval_date']) : null,
+            'disapproved_reason' => $part['disapproved_reason'] ?? null,
+            'last_modified_daisycon' => isset($part['last_modified']) ?
+                \Carbon\Carbon::parse($part['last_modified']) : now(),
+            'raw_data' => [
+                'transaction' => $transaction,
+                'part' => $part
+            ]
+        ];
+
+        // Chercher une participation existante
+        $participation = Participation::where('affiliatemarketing_id', $uniqueId)->first();
+
+        if ($participation) {
+            // Mettre à jour la participation existante
+            $participation->update($participationData);
+            Log::info('Participation mise à jour', ['id' => $participation->id]);
+        } else {
+            // Créer une nouvelle participation
+            // Note: user_id et offer_id peuvent être null si on ne peut pas les mapper
+            $participationData['clicked_at'] = isset($part['date_click']) ?
+                \Carbon\Carbon::parse($part['date_click']) : now();
+
+            Participation::create($participationData);
+            Log::info('Nouvelle participation créée', ['affiliatemarketing_id' => $uniqueId]);
+        }
+    }
+
+    private function mapDaisyconStatus(string $daisyconStatus): string
+    {
+        return match (strtolower($daisyconStatus)) {
+            'approved' => 'validee',
+            'disapproved' => 'refusee',
+            'pending' => 'en_attente',
             default => 'en_attente',
         };
+    }
 
-        if ($oldStatus !== $newStatus) {
-            $participation->update(['status' => $newStatus]);
-            
-            // Envoyer une notification si le statut a changé
-            if ($newStatus !== 'en_attente') {
-                $participation->user->notify(
-                    new \App\Notifications\ParticipationStatusChangedNotification($participation, $oldStatus)
-                );
-            }
+    public function getLastSyncInfo(): array
+    {
+        $lastSync = Setting::get('daisycon_last_sync');
+        $lastSyncCount = Setting::get('daisycon_last_sync_count', 0);
 
-            Log::info('Statut de participation mis à jour', [
-                'participation_id' => $participation->id,
-                'user_id' => $participation->user_id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-            ]);
-        }
+        return [
+            'last_sync' => $lastSync ? \Carbon\Carbon::parse($lastSync) : null,
+            'last_sync_count' => (int) $lastSyncCount,
+        ];
+    }
+
+    public function updateSyncInfo(int $syncedCount): void
+    {
+        Setting::set('daisycon_last_sync', now()->toISOString(), 'Dernière synchronisation Daisycon');
+        Setting::set('daisycon_last_sync_count', $syncedCount, 'Nombre de transactions synchronisées');
     }
 }

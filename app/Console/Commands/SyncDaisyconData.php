@@ -15,7 +15,10 @@ class SyncDaisyconData extends Command
         $this->info('Début de la synchronisation avec Daisycon...');
 
         try {
-            $daisyconService->syncParticipations();
+            $syncedCount = $daisyconService->syncTransactions();
+            $daisyconService->updateSyncInfo($syncedCount);
+
+            $this->info("Synchronisation terminée avec succès. {$syncedCount} transactions synchronisées.");
             $this->info('Synchronisation terminée avec succès.');
             return Command::SUCCESS;
         } catch (\Exception $e) {

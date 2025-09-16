@@ -1,0 +1,4 @@
+Below are your Client ID and Client secret. Your client secret cannot be shown again. If you forgot it you can generate a new one. The old one will no longer be valid. Please copy and store these credentials safety. Do not share your client secret with anyone outside your organization.
+
+ Client ID: 07c198e3-35e8-4819-b0cc-056066d13711
+ Client secret: 1SAPyjqDUBMNLIeNGVOlIoV8dUaOQcEQIJFm5TDfvzoTG2oKhRZp5k4FGV93cx5rdiqr8BFcNAh1mnuh_bSgng

@@ -7,6 +7,7 @@ import {
     TagIcon,
     ClipboardDocumentListIcon,
     ArrowRightOnRectangleIcon,
+    CogIcon,
 } from '@heroicons/react/24/outline';
 
 const AdminLayout = () => {
@@ -18,6 +19,7 @@ const AdminLayout = () => {
         { name: 'Utilisateurs', href: '/admin/users', icon: UsersIcon },
         { name: 'Offres', href: '/admin/offers', icon: TagIcon },
         { name: 'Participations', href: '/admin/participations', icon: ClipboardDocumentListIcon },
+        { name: 'Configuration Daisycon', href: '/admin/daisycon', icon: CogIcon },
     ];
 
     const isActive = (href) => location.pathname === href;
