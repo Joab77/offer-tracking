@@ -45,5 +45,26 @@ class DatabaseSeeder extends Seeder
             'daisycon_url' => 'https://daisycon.io/click?a=654321&c=987&p=321',
             'api_key' => 'test_api_key_booking_fr',
         ]);
+
+        // Paramètres Daisycon par défaut (à configurer)
+        \App\Models\Setting::create([
+            'key' => 'daisycon_publisher_id',
+            'value' => null,
+            'description' => 'ID Publisher Daisycon',
+        ]);
+
+        \App\Models\Setting::create([
+            'key' => 'daisycon_username',
+            'value' => null,
+            'description' => 'Nom d\'utilisateur Daisycon',
+        ]);
+
+        \App\Models\Setting::create([
+            'key' => 'daisycon_password',
+            'value' => null,
+            'description' => 'Mot de passe Daisycon',
+            'is_encrypted' => true,
+        ]);
+
     }
 }

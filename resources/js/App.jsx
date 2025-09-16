@@ -22,6 +22,7 @@ import AdminDashboard from './components/admin/Dashboard';
 import UserManagement from './components/admin/UserManagement';
 import OfferManagement from './components/admin/OfferManagement';
 import ParticipationManagement from './components/admin/ParticipationManagement';
+import DaisyconSettings from './components/admin/DaisyconSettings';
 
 // Loading Component
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -81,6 +82,7 @@ function App() {
                 <Route path="users" element={<UserManagement />} />
                 <Route path="offers" element={<OfferManagement />} />
                 <Route path="participations" element={<ParticipationManagement />} />
+                <Route path="daisycon" element={<DaisyconSettings />} />
             </Route>
 
             {/* Route par défaut pour toutes les routes inconnues */}

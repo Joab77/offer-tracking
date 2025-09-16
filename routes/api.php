@@ -67,5 +67,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Gestion des participations
         Route::get('/participations', [AdminParticipationController::class, 'index']);
+
+        // Configuration Daisycon
+        Route::get('/daisycon/settings', [App\Http\Controllers\Api\Admin\DaisyconController::class, 'getSettings']);
+        Route::post('/daisycon/settings', [App\Http\Controllers\Api\Admin\DaisyconController::class, 'updateSettings']);
+        Route::post('/daisycon/test', [App\Http\Controllers\Api\Admin\DaisyconController::class, 'testConnection']);
+        Route::post('/daisycon/sync', [App\Http\Controllers\Api\Admin\DaisyconController::class, 'syncNow']);
+
     });
 });
