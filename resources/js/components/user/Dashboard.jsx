@@ -36,9 +36,9 @@ const Dashboard = () => {
             const participations = participationsResponse.data.data;
             const stats = {
                 totalParticipations: participations.length,
-                validatedParticipations: participations.filter(p => p.status === 'validee').length,
-                pendingParticipations: participations.filter(p => p.status === 'en_attente').length,
-                rejectedParticipations: participations.filter(p => p.status === 'refusee').length,
+                approvedOffers: participations.filter(p => p.offer?.status === 'approved').length,
+                pendingOffers: participations.filter(p => p.offer?.status === 'pending').length,
+                disapprovedOffers: participations.filter(p => p.offer?.status === 'disapproved').length,
             };
             setStats(stats);
         } catch (error) {
@@ -48,33 +48,33 @@ const Dashboard = () => {
         }
     };
 
-    const getStatusIcon = (status) => {
+    const getOfferStatusIcon = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-            case 'refusee':
+            case 'disapproved':
                 return <XCircleIcon className="h-5 w-5 text-red-500" />;
             default:
                 return <ClockIcon className="h-5 w-5 text-yellow-500" />;
         }
     };
 
-    const getStatusText = (status) => {
+    const getOfferStatusText = (status) => {
         switch (status) {
-            case 'validee':
-                return 'Validée';
-            case 'refusee':
+            case 'approved':
+                return 'Approuvée';
+            case 'disapproved':
                 return 'Refusée';
             default:
                 return 'En attente';
         }
     };
 
-    const getStatusColor = (status) => {
+    const getOfferStatusColor = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return 'text-green-700 bg-green-50 border-green-200';
-            case 'refusee':
+            case 'disapproved':
                 return 'text-red-700 bg-red-50 border-red-200';
             default:
                 return 'text-yellow-700 bg-yellow-50 border-yellow-200';
@@ -138,10 +138,10 @@ const Dashboard = () => {
                             <div className="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt className="text-sm font-medium text-gray-500 truncate">
-                                        Validées
+                                        Approuvées
                                     </dt>
                                     <dd className="text-lg font-medium text-gray-900">
-                                        {stats.validatedParticipations}
+                                        {stats.approvedOffers}
                                     </dd>
                                 </dl>
                             </div>
@@ -159,7 +159,7 @@ const Dashboard = () => {
                                         En attente
                                     </dt>
                                     <dd className="text-lg font-medium text-gray-900">
-                                        {stats.pendingParticipations}
+                                        {stats.pendingOffers}
                                     </dd>
                                 </dl>
                             </div>
@@ -177,7 +177,7 @@ const Dashboard = () => {
                                         Refusées
                                     </dt>
                                     <dd className="text-lg font-medium text-gray-900">
-                                        {stats.rejectedParticipations}
+                                        {stats.disapprovedOffers}
                                     </dd>
                                 </dl>
                             </div>
@@ -210,7 +210,7 @@ const Dashboard = () => {
                                             {offer.title}
                                         </p>
                                         <p className="text-sm text-gray-500">
-                                            Commission: {offer.commission}€
+                                            Commission: {offer.commission} {offer.currency_code}
                                         </p>
                                     </div>
                                     <Link
@@ -245,18 +245,18 @@ const Dashboard = () => {
                             recentParticipations.map((participation) => (
                                 <div key={participation.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                                     <div className="flex-shrink-0">
-                                        {getStatusIcon(participation.status)}
+                                        {getOfferStatusIcon(participation.offer?.status)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-gray-900 truncate">
                                             {participation.offer?.title}
                                         </p>
                                         <p className="text-sm text-gray-500">
-                                            {new Date(participation.clicked_at).toLocaleDateString('fr-FR')}
+                                            {new Date(participation.created_at).toLocaleDateString('fr-FR')}
                                         </p>
                                     </div>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(participation.status)}`}>
-                                        {getStatusText(participation.status)}
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getOfferStatusColor(participation.offer?.status)}`}>
+                                        {getOfferStatusText(participation.offer?.status)}
                                     </span>
                                 </div>
                             ))

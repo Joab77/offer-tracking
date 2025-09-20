@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
-import toast from 'react-hot-toast';
+import Alert from '@/utils/alert';
 import axios from 'axios';
 import { UserIcon, EnvelopeIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import {useLocation} from "../../hooks/useLocation";
@@ -45,11 +45,11 @@ const Profile = () => {
         try {
             setIsLoading(true);
             await axios.put('/api/profile', data);
-            toast.success('Profil mis à jour avec succès !');
+            Alert.success('Profil mis à jour avec succès !');
             await checkAuth(); // Recharger les données utilisateur
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la mise à jour';
-            toast.error(message);
+            Alert.error(message);
 
             if (error.response?.data?.errors) {
                 Object.keys(error.response.data.errors).forEach((field) => {

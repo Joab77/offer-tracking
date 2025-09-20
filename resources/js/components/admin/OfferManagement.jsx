@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import Alert from '@/utils/alert';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -21,7 +21,7 @@ const schema = yup.object({
     image_url: yup.string().url('URL invalide').nullable(),
     commission: yup.number().required('Commission requise').min(0, 'La commission doit être positive'),
     country: yup.string().required('Pays requis'),
-    daisycon_url: yup.string().required('URL Daisycon requise').url('URL invalide'),
+    deeplink: yup.string().required('URL Daisycon requise').url('URL invalide'),
     api_key: yup.string().nullable(),
 });
 
@@ -78,7 +78,7 @@ const OfferManagement = () => {
             });
         } catch (error) {
             console.error('Erreur lors du chargement des offres:', error);
-            toast.error('Erreur lors du chargement des offres');
+            Alert.error('Erreur lors du chargement des offres');
         } finally {
             setLoading(false);
         }
@@ -97,7 +97,7 @@ const OfferManagement = () => {
         setValue('image_url', offer.image_url || '');
         setValue('commission', offer.commission);
         setValue('country', offer.country);
-        setValue('daisycon_url', offer.daisycon_url);
+        setValue('deeplink', offer.deeplink);
         setValue('api_key', offer.api_key || '');
         setShowModal(true);
     };
@@ -114,17 +114,17 @@ const OfferManagement = () => {
 
             if (editingOffer) {
                 await axios.put(`/api/admin/offers/${editingOffer.id}`, data);
-                toast.success('Offre modifiée avec succès !');
+                Alert.success('Offre modifiée avec succès !');
             } else {
                 await axios.post('/api/admin/offers', data);
-                toast.success('Offre créée avec succès !');
+                Alert.success('Offre créée avec succès !');
             }
 
             closeModal();
             fetchOffers(currentPage);
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la sauvegarde';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setSubmitting(false);
         }
@@ -138,11 +138,11 @@ const OfferManagement = () => {
         try {
             setDeleting(offerId);
             await axios.delete(`/api/admin/offers/${offerId}`);
-            toast.success('Offre supprimée avec succès !');
+            Alert.success('Offre supprimée avec succès !');
             fetchOffers(currentPage);
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la suppression';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setDeleting(null);
         }
@@ -541,13 +541,13 @@ const OfferManagement = () => {
                                             URL Daisycon
                                         </label>
                                         <input
-                                            {...register('daisycon_url')}
+                                            {...register('deeplink')}
                                             type="url"
                                             className="input-field mt-1"
                                             placeholder="https://daisycon.io/click?a=123&c=456&p=789"
                                         />
-                                        {errors.daisycon_url && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.daisycon_url.message}</p>
+                                        {errors.deeplink && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.deeplink.message}</p>
                                         )}
                                     </div>
 
@@ -643,7 +643,7 @@ const OfferManagement = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">URL Daisycon</label>
-                                    <p className="mt-1 text-sm text-gray-900 break-all">{selectedOffer.daisycon_url}</p>
+                                    <p className="mt-1 text-sm text-gray-900 break-all">{selectedOffer.deeplink}</p>
                                 </div>
                                 {selectedOffer.api_key && (
                                     <div>

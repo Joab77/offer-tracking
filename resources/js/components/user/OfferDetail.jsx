@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import Alert from '@/utils/alert';
 import LoadingSpinner from '../common/LoadingSpinner';
 import {
     TagIcon,
     CurrencyEuroIcon,
-    ArrowLeftIcon
+    ArrowLeftIcon,
+    LinkIcon,
+    CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import {useLocation} from "@/hooks/useLocation.jsx";
 
 const OfferDetail = () => {
     const { id } = useParams();
@@ -16,61 +19,109 @@ const OfferDetail = () => {
     const [loading, setLoading] = useState(true);
     const [applying, setApplying] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
+    const { code, loading: geoLoading } = useLocation();
 
     useEffect(() => {
-        fetchOffer();
-        checkParticipation();
-    }, [id]);
+        if(!geoLoading && code) {
+            fetchOffer(code);
+            checkParticipation();
+        }
 
-    const fetchOffer = async () => {
+    }, [id, geoLoading, code]);
+
+    const fetchOffer = async (userCountry) => {
         try {
-            const response = await axios.get(`/api/offers`);
-            const foundOffer = response.data.data.find(o => o.id === parseInt(id));
-            if (foundOffer) {
-                setOffer(foundOffer);
+            const response = await axios.get(`/api/offers/${id}`, {
+                headers: {
+                    'X-Country': userCountry
+                }
+            });
+
+            console.log(response)
+
+            if (response.data.success) {
+                setOffer(response.data.data);
             } else {
-                toast.error('Offre non trouvée');
+                Alert.error('Offre non trouvée');
                 navigate('/offers');
             }
         } catch (error) {
             console.error('Erreur lors du chargement de l\'offre:', error);
-            toast.error('Erreur lors du chargement de l\'offre');
+            Alert.error('Erreur lors du chargement de l\'offre');
             navigate('/offers');
         } finally {
             setLoading(false);
         }
     };
 
+
     const checkParticipation = async () => {
         try {
             const response = await axios.get('/api/participations');
             const participation = response.data.data.find(p => p.offer_id === parseInt(id));
+            console.log("participation", response)
             setHasApplied(!!participation);
         } catch (error) {
             console.error('Erreur lors de la vérification de la participation:', error);
         }
     };
 
-    const handleApply = async () => {
+    const handleParticipate = async (isApply = true) => {
+        if (!isApply) window.open(offer.deeplink, "_blank");
         try {
             setApplying(true);
-            const response = await axios.post(`/api/offers/${id}/apply`);
+            const response = await axios.post(
+                `/api/offers/${id}/apply`,
+                {}, // corps vide
+                {
+                    headers: {
+                        'X-Country': code
+                    }
+                }
+            );
 
-            toast.success('Participation enregistrée avec succès !');
-            setHasApplied(true);
+            if (response.data.action === 'continue') {
+                // L'utilisateur a déjà participé
+                Alert.info('Redirection vers votre mission...');
+            } else {
+                // Nouvelle participation
+                Alert.success('Participation enregistrée avec succès !');
+                setHasApplied(true);
+            }
 
-            // Ouvrir le lien d'affiliation dans un nouvel onglet
-            if (response.data.affiliate_url) {
-                window.open(response.data.affiliate_url, '_blank');
+            // Rediriger vers le deeplink
+            if (response.data.deeplink) {
+                window.open(response.data.deeplink, '_blank');
             }
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la participation';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setApplying(false);
         }
     };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'approved':
+                return 'text-green-700 bg-green-50 border-green-200';
+            case 'disapproved':
+                return 'text-red-700 bg-red-50 border-red-200';
+            default:
+                return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'approved':
+                return 'Approuvée';
+            case 'disapproved':
+                return 'Refusée';
+            default:
+                return 'En attente';
+        }
+    };
     if (loading) {
         return <LoadingSpinner />;
     }
@@ -127,11 +178,14 @@ const OfferDetail = () => {
                                     <div className="flex items-center space-x-1 text-green-600">
                                         <CurrencyEuroIcon className="h-5 w-5" />
                                         <span className="text-lg font-semibold">
-                                            {offer.commission}€ de commission
+                                            {offer.commission} {offer.currency_code} de commission
                                         </span>
                                     </div>
                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                                         {offer.country}
+                                    </span>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(offer.status)}`}>
+                                        {getStatusText(offer.status)}
                                     </span>
                                 </div>
                             </div>
@@ -150,25 +204,37 @@ const OfferDetail = () => {
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                                     <div className="flex items-center">
                                         <div className="flex-shrink-0">
-                                            <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
+                                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
                                         </div>
                                         <div className="ml-3">
-                                            <h3 className="text-sm font-medium text-green-800">
-                                                Participation enregistrée
-                                            </h3>
+                                            <h3 className="text-sm font-medium text-green-800">Vous participez à cette offre</h3>
                                             <div className="mt-2 text-sm text-green-700">
                                                 <p>
-                                                    Vous avez déjà participé à cette offre. Consultez vos participations pour suivre le statut.
+                                                    Cliquez sur "Continuer la mission" pour accéder à nouveau au lien d'affiliation.
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => handleParticipate(false)}
+                                            disabled={applying}
+                                            className="btn-secondary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {applying ? (
+                                                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                                            ) : (
+                                                <>
+                                                    <LinkIcon className="h-4 w-4" />
+                                                    <span>Continuer la mission</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <button
-                                    onClick={handleApply}
+                                    onClick={handleParticipate}
                                     disabled={applying}
                                     className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -176,7 +242,7 @@ const OfferDetail = () => {
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                     ) : (
                                         <>
-                                            <ArrowLeftIcon className="h-5 w-5" />
+                                            <LinkIcon className="h-5 w-5" />
                                             <span>Participer à cette offre</span>
                                         </>
                                     )}
@@ -191,7 +257,7 @@ const OfferDetail = () => {
                                     <li>• Cliquez sur "Participer à cette offre"</li>
                                     <li>• Vous serez redirigé vers le site partenaire</li>
                                     <li>• Effectuez l'action demandée (achat, inscription, etc.)</li>
-                                    <li>• Votre commission sera validée automatiquement</li>
+                                    <li>• Le statut de l'offre sera mis à jour automatiquement</li>
                                 </ul>
                             </div>
                         </div>

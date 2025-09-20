@@ -12,10 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('offer_id')->constrained()->onDelete('cascade');
-            $table->timestamp('clicked_at');
-            $table->enum('status', ['en_attente', 'validee', 'refusee'])->default('en_attente');
             $table->timestamps();
-            
+
+            // Un utilisateur ne peut participer qu'une seule fois à une offre
             $table->unique(['user_id', 'offer_id']);
         });
     }

@@ -67,7 +67,7 @@ class AdminTest extends TestCase
             'description' => 'Description de l\'offre test',
             'commission' => 25.50,
             'country' => 'FR',
-            'daisycon_url' => 'https://daisycon.io/click?a=123&c=456&p=789',
+            'deeplink' => 'https://daisycon.io/click?a=123&c=456&p=789',
             'api_key' => 'test_api_key',
         ];
 

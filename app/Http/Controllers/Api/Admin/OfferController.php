@@ -31,7 +31,7 @@ class OfferController extends Controller
             'image_url' => 'nullable|url',
             'commission' => 'required|numeric|min:0',
             'country' => 'required|string|size:2',
-            'daisycon_url' => 'required|url',
+            'deeplink' => 'required|url',
             'api_key' => 'nullable|string',
         ]);
 
@@ -48,7 +48,7 @@ class OfferController extends Controller
             'image_url' => $request->image_url,
             'commission' => $request->commission,
             'country' => strtoupper($request->country),
-            'daisycon_url' => $request->daisycon_url,
+            'deeplink' => $request->deeplink,
             'api_key' => $request->api_key,
         ]);
 
@@ -66,7 +66,7 @@ class OfferController extends Controller
             'image_url' => 'nullable|url',
             'commission' => 'required|numeric|min:0',
             'country' => 'required|string|size:2',
-            'daisycon_url' => 'required|url',
+            'deeplink' => 'required|url',
             'api_key' => 'nullable|string',
         ]);
 
@@ -83,7 +83,7 @@ class OfferController extends Controller
             'image_url' => $request->image_url,
             'commission' => $request->commission,
             'country' => strtoupper($request->country),
-            'daisycon_url' => $request->daisycon_url,
+            'deeplink' => $request->deeplink,
             'api_key' => $request->api_key,
         ]);
 
