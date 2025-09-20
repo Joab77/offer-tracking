@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import {useLocation} from "@/hooks/useLocation.jsx";
 
 
 const LandingPage = () => {
@@ -11,9 +12,11 @@ const LandingPage = () => {
   const [typingSpeed, setTypingSpeed] = useState(150);
     const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    useLocation();
 
 
-  // Textes à afficher avec l'effet typing  
+
+    // Textes à afficher avec l'effet typing
   const texts = ['Gagnez de l\'argent en', 'ligne avec Gain', 'Gains Exprex'];
 
   // Détection du scroll
@@ -37,11 +40,11 @@ const LandingPage = () => {
       name: 'Missions',
       link: '#missions',
       submenu: [
-        { name: 'Décrocher une mission', 
+        { name: 'Décrocher une mission',
         link: '/register',
-        className: 'whitespace-nowrap' 
+        className: 'whitespace-nowrap'
  },
-    
+
       ]
     },
     {
@@ -59,14 +62,14 @@ const LandingPage = () => {
     const handleTyping = () => {
       const i = loopNum % texts.length;
       const fullText = texts[i];
-      
-      setText(isDeleting 
+
+      setText(isDeleting
         ? fullText.substring(0, text.length - 1)
         : fullText.substring(0, text.length + 1)
       );
-      
+
       setTypingSpeed(isDeleting ? 75 : 150);
-      
+
       if (!isDeleting && text === fullText) {
         setTimeout(() => setIsDeleting(true), 1000);
       } else if (isDeleting && text === '') {
@@ -102,9 +105,9 @@ const LandingPage = () => {
                 <div key={index} className="relative group">
 
 
-                    <motion.a 
+                    <motion.a
                     href={item.link}
-                    whileHover={{ 
+                    whileHover={{
                         scale: 1.05,
                         color: '#6366F1',
                         transition: { duration: 0.3 }
@@ -113,14 +116,14 @@ const LandingPage = () => {
                     >
                     {item.name}
                     </motion.a>
-               
+
                   {/* Sous-menu */}
                   {item.submenu && (
                     <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                       {item.submenu.map((subItem, subIndex) => (
-                        <a 
-                          key={subIndex} 
-                          href={subItem.link} 
+                        <a
+                          key={subIndex}
+                          href={subItem.link}
                           className={`block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-300 ${subItem.className || ''}`}
                         >
                           {subItem.name}
@@ -133,7 +136,7 @@ const LandingPage = () => {
             </nav>
 
             {/* Bouton mobile */}
-            <button 
+            <button
               className={`md:hidden ${scrolled ? 'text-gray-800' : 'text-white'}`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -150,21 +153,21 @@ const LandingPage = () => {
             <div className="container mx-auto px-4 py-4">
               {menuItems.map((item, index) => (
                 <div key={index} className="py-2 border-b border-gray-100">
-                  <a 
-                    href={item.link} 
+                  <a
+                    href={item.link}
                     className="block text-gray-700 hover:text-indigo-600 transition duration-300"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.name}
                   </a>
-                  
+
                   {/* Sous-menu mobile */}
                   {item.submenu && (
                     <div className="pl-4 mt-2">
                       {item.submenu.map((subItem, subIndex) => (
-                        <a 
-                          key={subIndex} 
-                          href={subItem.link} 
+                        <a
+                          key={subIndex}
+                          href={subItem.link}
                           className="block py-2 text-gray-600 hover:text-indigo-600 transition duration-300"
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -180,11 +183,11 @@ const LandingPage = () => {
         )}
       </header>
       {/* Hero Section */}
-       
+
      {/* Hero Section avec animation typing */}
       <section className="relative min-h-screen flex items-center justify-center py-16" id="hero">
         <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div 
+        <div
           className="absolute inset-0 z-0"
           style={{
             background: "linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80')",
@@ -192,7 +195,7 @@ const LandingPage = () => {
             backgroundPosition: "center"
           }}
         ></div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center text-white">
           <div className="h-24 md:h-28 mb-6 flex justify-center items-center">
             <h1 className="text-4xl md:text-5xl font-bold">
@@ -200,22 +203,22 @@ const LandingPage = () => {
               <span className="ml-1 inline-block w-0.5 h-12 bg-white animate-pulse"></span>
             </h1>
           </div>
-          
+
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">Transformez votre audience en revenus avec une plateforme parfaitement calibrée</p>
-          
+
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a 
-              href="/register"  
+            <a
+              href="/register"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 transform hover:-translate-y-1 text-center">
               Commencer
             </a>
-            <a 
+            <a
     href="#services"  className="bg-transparent hover:bg-white text-white hover:text-gray-800 font-bold py-3 px-8 border-2 border-white rounded-full transition duration-300 text-center">
               En savoir plus
             </a>
           </div>
         </div>
-        
+
         <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
@@ -228,7 +231,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-4">Nos Services</h2>
           <p className="text-xl text-center text-gray-600 mb-16 max-w-2xl mx-auto">Découvrez notre gamme complète de services conçus pour propulser votre entreprise vers l'avant</p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Service Card 1 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:-translate-y-1 hover:shadow-lg">
@@ -238,7 +241,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-semibold mb-3">Développement Web</h3>
               <p className="text-gray-600">Des sites web modernes, réactifs et entièrement personnalisés pour répondre à vos besoins spécifiques.</p>
             </div>
-            
+
             {/* Service Card 2 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:-translate-y-1 hover:shadow-lg">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
@@ -247,7 +250,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-semibold mb-3">Applications Mobiles</h3>
               <p className="text-gray-600">Applications iOS et Android intuitives et performantes qui engagent vos utilisateurs.</p>
             </div>
-            
+
             {/* Service Card 3 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:-translate-y-1 hover:shadow-lg">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
@@ -256,7 +259,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-semibold mb-3">Marketing Digital</h3>
               <p className="text-gray-600">Stratégies de marketing digital sur mesure pour accroître votre visibilité en ligne.</p>
             </div>
-            
+
             {/* Service Card 4 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:-translate-y-1 hover:shadow-lg">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-4">
@@ -274,13 +277,13 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
-              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80" 
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80"
                    alt="Notre équipe" className="rounded-xl shadow-xl w-full" />
             </div>
             <div className="md:w-1/2 md:pl-12">
               <h2 className="text-4xl font-bold mb-6">Pourquoi nous choisir ?</h2>
               <p className="text-lg text-gray-700 mb-6">Chez nous, l'innovation et l'excellence sont au cœur de tout ce que nous faisons. Notre équipe d'experts passionnés travaille sans relâche pour délivrer des solutions qui dépassent les attentes.</p>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start">
                   <div className="bg-indigo-600 rounded-full p-2 mr-4">
@@ -291,7 +294,7 @@ const LandingPage = () => {
                     <p className="text-gray-600">Notre équipe maîtrise les dernières technologies et frameworks.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <div className="bg-indigo-600 rounded-full p-2 mr-4">
                     <i className="fas fa-check text-white"></i>
@@ -301,7 +304,7 @@ const LandingPage = () => {
                     <p className="text-gray-600">Nous vous accompagnons à chaque étape de votre projet.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <div className="bg-indigo-600 rounded-full p-2 mr-4">
                     <i className="fas fa-check text-white"></i>
@@ -322,7 +325,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-4">Ce que disent nos clients</h2>
           <p className="text-xl text-center text-gray-600 mb-16 max-w-2xl mx-auto">Découvrez les témoignages de ceux qui nous ont fait confiance</p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Testimonial 1 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:scale-105">
@@ -344,7 +347,7 @@ const LandingPage = () => {
                 <i className="fas fa-star"></i>
               </div>
             </div>
-            
+
             {/* Testimonial 2 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:scale-105">
               <div className="flex items-center mb-4">
@@ -365,7 +368,7 @@ const LandingPage = () => {
                 <i className="fas fa-star"></i>
               </div>
             </div>
-            
+
             {/* Testimonial 3 */}
             <div className="bg-white rounded-xl p-6 transition transform hover:scale-105">
               <div className="flex items-center mb-4">
@@ -409,7 +412,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-semibold mb-4">Notre Société</h3>
               <p className="text-gray-400">Nous créons des solutions digitales innovantes qui aident les entreprises à prospérer à l'ère numérique.</p>
             </div>
-            
+
             <div>
               <h3 className="text-xl font-semibold mb-4">Liens Rapides</h3>
               <ul className="space-y-2">
@@ -419,7 +422,7 @@ const LandingPage = () => {
                 <li><a href="#testimonials" className="text-gray-400 hover:text-white transition">Témoignages</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-xl font-semibold mb-4">Services</h3>
               <ul className="space-y-2">
@@ -429,7 +432,7 @@ const LandingPage = () => {
                 <li><a href="#" className="text-gray-400 hover:text-white transition">Solutions Cloud</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-xl font-semibold mb-4">Contact</h3>
               <ul className="space-y-2">
@@ -439,7 +442,7 @@ const LandingPage = () => {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-700 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400">© 2023 Votre Société. Tous droits réservés.</p>
             <div className="flex space-x-4 mt-4 md:mt-0">

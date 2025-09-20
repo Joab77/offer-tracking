@@ -14,16 +14,22 @@ class DatabaseSeeder extends Seeder
         // Créer un administrateur
         User::create([
             'name' => 'Admin',
-            'email' => 'admin@example.com',
+            'email' => 'admin@test.com',
             'password' => Hash::make('password123'),
-            'pays' => 'FR',
             'validated' => true,
             'is_admin' => true,
             'email_verified_at' => now(),
         ]);
 
-        // Créer quelques utilisateurs de test
-        User::factory(10)->create();
+        User::create([
+            'name' => 'User',
+            'email' => 'user@test.com',
+            'password' => Hash::make('password123'),
+            'validated' => true,
+            'is_admin' => false,
+            'email_verified_at' => now(),
+        ]);
+
 
         // Créer quelques offres de test
         Offer::create([
@@ -32,8 +38,7 @@ class DatabaseSeeder extends Seeder
             'image_url' => 'https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg',
             'commission' => 15.50,
             'country' => 'FR',
-            'daisycon_url' => 'https://daisycon.io/click?a=123456&c=789&p=654',
-            'api_key' => 'test_api_key_amazon_fr',
+            'deeplink' => 'https://daisycon.io/click?a=123456&c=789&p=654',
         ]);
 
         Offer::create([
@@ -41,9 +46,8 @@ class DatabaseSeeder extends Seeder
             'description' => 'Commissions sur les réservations d\'hôtels',
             'image_url' => 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg',
             'commission' => 25.00,
-            'country' => 'FR',
-            'daisycon_url' => 'https://daisycon.io/click?a=654321&c=987&p=321',
-            'api_key' => 'test_api_key_booking_fr',
+            'country' => 'BJ',
+            'deeplink' => 'https://daisycon.io/click?a=654321&c=987&p=321'
         ]);
 
         // Paramètres Daisycon par défaut (à configurer)

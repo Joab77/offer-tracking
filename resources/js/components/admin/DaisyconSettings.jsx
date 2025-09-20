@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import Alert from '@/utils/alert';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -53,7 +53,7 @@ const DaisyconSettings = () => {
             setSyncInfo(sync_info);
         } catch (error) {
             console.error('Erreur lors du chargement des paramètres:', error);
-            toast.error('Erreur lors du chargement des paramètres');
+            Alert.error('Erreur lors du chargement des paramètres');
         } finally {
             setLoading(false);
         }
@@ -63,11 +63,11 @@ const DaisyconSettings = () => {
         try {
             setSubmitting(true);
             await axios.post('/api/admin/daisycon/settings', data);
-            toast.success('Paramètres sauvegardés avec succès !');
+            Alert.success('Paramètres sauvegardés avec succès !');
             setConnectionStatus(null); // Reset connection status
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la sauvegarde';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setSubmitting(false);
         }
@@ -81,14 +81,14 @@ const DaisyconSettings = () => {
                 success: true,
                 message: response.data.message
             });
-            toast.success('Connexion réussie !');
+            Alert.success('Connexion réussie !');
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur de connexion';
             setConnectionStatus({
                 success: false,
                 message: message
             });
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setTesting(false);
         }
@@ -98,11 +98,11 @@ const DaisyconSettings = () => {
         try {
             setSyncing(true);
             const response = await axios.post('/api/admin/daisycon/sync');
-            toast.success(response.data.message);
+            Alert.success(response.data.message);
             fetchSettings(); // Refresh sync info
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la synchronisation';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setSyncing(false);
         }
@@ -158,7 +158,7 @@ const DaisyconSettings = () => {
                             ) : (
                                 <ArrowPathIcon className="h-4 w-4" />
                             )}
-                            <span>{syncing ? 'Synchronisation...' : 'Synchroniser maintenant'}</span>
+                            <span>{syncing ? 'Synchronisation...' : 'Synchroniser les offres'}</span>
                         </button>
                     </div>
                 </div>
@@ -276,8 +276,8 @@ const DaisyconSettings = () => {
                     Synchronisation automatique
                 </h4>
                 <p className="text-sm text-blue-800">
-                    La synchronisation avec l'API Daisycon s'effectue automatiquement toutes les nuits à 2h00.
-                    Vous pouvez également déclencher une synchronisation manuelle en utilisant le bouton ci-dessus.
+                    La synchronisation des offres avec l'API Daisycon s'effectue automatiquement toutes les nuits à 2h00.
+                    Cette synchronisation met à jour les statuts, commissions et autres données des offres existantes.
                 </p>
             </div>
         </div>

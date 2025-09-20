@@ -12,59 +12,78 @@ class OfferController extends Controller
     public function index(Request $request)
     {
         // Récupérer le code pays depuis l'en-tête
-        $country = $request->header('X-Country');
+        $userCountry = $request->header('X-Country');
 
-        if(!$country) $country = 'BJ';
+        if (!$userCountry) {
+            return response()->json([
+                'message' => 'Localisation requise pour afficher les offres',
+                'error' => 'GEOLOCATION_REQUIRED'
+            ], 400);
+        }
 
-        $offers = Offer::where('country', $country)
+        $offers = Offer::where('country', strtoupper($userCountry))
             ->latest()
             ->paginate(20);
-
 
         return response()->json($offers);
     }
 
-    public function apply(Request $request, Offer $offer)
+    public function show(Request $request, $id)
     {
-        // Récupérer le code pays depuis l'en-tête
         $country = $request->header('X-Country');
 
-        // Vérifier si l'offre est pour le bon pays
-        if ($offer->country !== $country) {
-            return response()->json([
-                'message' => 'Cette offre n\'est pas disponible dans votre pays'
-            ], 403);
-        }
 
-        $user = $request->user();
-
-        // Vérifier si l'utilisateur a déjà postulé
-        $existingParticipation = Participation::where('user_id', $user->id)
-            ->where('offer_id', $offer->id)
+        $offer = Offer::query()
+            ->where('id', $id)
+            ->when($country, fn($q) => $q->where('country', $country))
             ->first();
 
-        if ($existingParticipation) {
+        if (!$offer) {
             return response()->json([
-                'message' => 'Vous avez déjà postulé à cette offre',
-                'participation' => $existingParticipation
-            ], 409);
+                'success' => false,
+                'message' => 'Offre non trouvée'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $offer
+        ]);
+    }
+
+    public function apply(Request $request, Offer $offer)
+    {
+        $user = $request->user();
+        $userCountry = $request->header('X-Country');
+
+        // Vérifier si l'offre est pour le bon pays
+        if ($offer->country !== strtoupper($userCountry)) {
+            return response()->json([
+                'message' => 'Cette offre n\'est pas disponible dans votre pays'
+            ]);
+        }
+
+        // Vérifier si l'utilisateur a déjà participé
+        if ($offer->hasUserParticipated($user->id)) {
+            return response()->json([
+                'message' => 'Vous avez déjà participé à cette offre',
+                'action' => 'continue',
+                'deeplink' => $offer->deeplink
+            ], 200);
         }
 
         // Créer la participation
         $participation = Participation::create([
             'user_id' => $user->id,
             'offer_id' => $offer->id,
-            'clicked_at' => now(),
-            'status' => 'en_attente',
         ]);
 
-        // Générer l'URL d'affiliation avec subid
-        $affiliateUrl = $offer->getAffiliateUrl($user->id);
 
         return response()->json([
             'message' => 'Participation enregistrée avec succès',
             'participation' => $participation,
-            'affiliate_url' => $affiliateUrl
+            'action' => 'participate',
+            'deeplink' => $offer->deeplink
         ], 201);
     }
 }

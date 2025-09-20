@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import Alert from '@/utils/alert';
 import LoadingSpinner from '../common/LoadingSpinner';
 import {
     UsersIcon,
@@ -49,7 +49,7 @@ const UserManagement = () => {
             });
         } catch (error) {
             console.error('Erreur lors du chargement des utilisateurs:', error);
-            toast.error('Erreur lors du chargement des utilisateurs');
+            Alert.error('Erreur lors du chargement des utilisateurs');
         } finally {
             setLoading(false);
         }
@@ -59,11 +59,11 @@ const UserManagement = () => {
         try {
             setValidating(userId);
             await axios.patch(`/api/admin/users/${userId}/validate`);
-            toast.success('Utilisateur validé avec succès !');
+            Alert.success('Utilisateur validé avec succès !');
             fetchUsers(currentPage);
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la validation';
-            toast.error(message);
+            Alert.error(message);
         } finally {
             setValidating(null);
         }

@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
     {
         // Synchronisation avec Daisycon toutes les heures
         $schedule->command('daisycon:sync')
-                 ->hourly()
+                 ->everyMinute()
                  ->withoutOverlapping()
                  ->runInBackground();
     }

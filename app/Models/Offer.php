@@ -12,15 +12,22 @@ class Offer extends Model
     protected $fillable = [
         'title',
         'description',
-        'image_url',
+        'deeplink',
+        'status',
         'commission',
+        'currency_code',
         'country',
-        'daisycon_url',
-        'api_key',
+        'program_id',
+        'program_name',
+        'image_url',
+        'last_updated_daisycon',
+        'raw_data',
     ];
 
     protected $casts = [
         'commission' => 'decimal:2',
+        'last_updated_daisycon' => 'datetime',
+        'raw_data' => 'array',
     ];
 
     public function participations()
@@ -28,9 +35,23 @@ class Offer extends Model
         return $this->hasMany(Participation::class);
     }
 
-    public function getAffiliateUrl(int $userId): string
+    public function hasUserParticipated(int $userId): bool
     {
-        $separator = str_contains($this->daisycon_url, '?') ? '&' : '?';
-        return $this->daisycon_url . $separator . 'subid=user_' . $userId;
+        return $this->participations()->where('user_id', $userId)->exists();
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isDisapproved(): bool
+    {
+        return $this->status === 'disapproved';
     }
 }

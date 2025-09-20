@@ -8,6 +8,9 @@ import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 
+// Landing
+import Landing from './components/landing';
+
 // User Components
 import UserLayout from './components/layouts/UserLayout';
 import UserDashboard from './components/user/Dashboard';
@@ -22,13 +25,10 @@ import AdminDashboard from './components/admin/Dashboard';
 import UserManagement from './components/admin/UserManagement';
 import OfferManagement from './components/admin/OfferManagement';
 import ParticipationManagement from './components/admin/ParticipationManagement';
-import DaisyconSettings from './components/admin/DaisyconSettings';
 
 // Loading Component
 import LoadingSpinner from './components/common/LoadingSpinner';
-// Landing  Page
-import Landing from './components/landing';
-
+import DaisyconSettings from "@/components/admin/DaisyconSettings.jsx";
 
 function App() {
     const { user, loading } = useAuth();
@@ -39,33 +39,17 @@ function App() {
 
     return (
         <Routes>
-            {/* Landing page publique */}
+            {/* Landing publique */}
             <Route path="/" element={<Landing />} />
 
             {/* Routes publiques */}
-            <Route
-                path="/login"
-                element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/app"} />}
-            />
-            <Route
-                path="/register"
-                element={!user ? <Register /> : <Navigate to="/app" />}
-            />
-            <Route
-                path="/forgot-password"
-                element={!user ? <ForgotPassword /> : <Navigate to="/app" />}
-            />
-            <Route
-                path="/reset-password"
-                element={!user ? <ResetPassword /> : <Navigate to="/app" />}
-            />
+            <Route path="/login" element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/dashboard"} />} />
+            <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+            <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
+            <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
 
             {/* Routes utilisateur */}
-            <Route
-                path="/app"
-                element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}
-            >
-                <Route index element={<Navigate to="dashboard" />} />
+            <Route path="/" element={user && !user.is_admin ? <UserLayout /> : <Navigate to={user?.is_admin ? "/admin" : "/login"} />}>
                 <Route path="dashboard" element={<UserDashboard />} />
                 <Route path="offers" element={<OffersList />} />
                 <Route path="offers/:id" element={<OfferDetail />} />
@@ -74,10 +58,7 @@ function App() {
             </Route>
 
             {/* Routes admin */}
-            <Route
-                path="/admin"
-                element={user?.is_admin ? <AdminLayout /> : <Navigate to="/login" />}
-            >
+            <Route path="/admin" element={user?.is_admin ? <AdminLayout /> : <Navigate to="/login" />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="offers" element={<OfferManagement />} />
@@ -85,11 +66,8 @@ function App() {
                 <Route path="daisycon" element={<DaisyconSettings />} />
             </Route>
 
-            {/* Route par défaut pour toutes les routes inconnues */}
-            <Route
-                path="*"
-                element={<Navigate to={user ? (user.is_admin ? "/admin" : "/app") : "/login"} />}
-            />
+            {/* Route par défaut */}
+            <Route path="*" element={<Navigate to={user ? (user.is_admin ? "/admin" : "/dashboard") : "/"} />} />
         </Routes>
     );
 }

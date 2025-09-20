@@ -8,10 +8,12 @@ import {
     UserIcon,
     ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import {useLocation as useLocalisation} from "@/hooks/useLocation.jsx";
 
 const UserLayout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
+    useLocalisation()
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },

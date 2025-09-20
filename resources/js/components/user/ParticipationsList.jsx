@@ -23,12 +23,16 @@ const ParticipationsList = () => {
         try {
             setLoading(true);
             let url = `/api/participations?page=${page}`;
-            if (filter !== 'all') {
-                url += `&status=${filter}`;
-            }
-            
+
             const response = await axios.get(url);
-            setParticipations(response.data.data);
+            let filteredParticipations = response.data.data;
+
+            // Filtrer côté client selon le statut de l'offre
+            if (filter !== 'all') {
+                filteredParticipations = response.data.data.filter(p => p.offer?.status === filter);
+            }
+
+            setParticipations(filteredParticipations);
             setPagination({
                 current_page: response.data.current_page,
                 last_page: response.data.last_page,
@@ -42,33 +46,33 @@ const ParticipationsList = () => {
         }
     };
 
-    const getStatusIcon = (status) => {
+    const getOfferStatusIcon = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-            case 'refusee':
+            case 'disapproved':
                 return <XCircleIcon className="h-5 w-5 text-red-500" />;
             default:
                 return <ClockIcon className="h-5 w-5 text-yellow-500" />;
         }
     };
 
-    const getStatusText = (status) => {
+    const getOfferStatusText = (status) => {
         switch (status) {
-            case 'validee':
-                return 'Validée';
-            case 'refusee':
+            case 'approved':
+                return 'Approuvée';
+            case 'disapproved':
                 return 'Refusée';
             default:
                 return 'En attente';
         }
     };
 
-    const getStatusColor = (status) => {
+    const getOfferStatusColor = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return 'text-green-700 bg-green-50 border-green-200';
-            case 'refusee':
+            case 'disapproved':
                 return 'text-red-700 bg-red-50 border-red-200';
             default:
                 return 'text-yellow-700 bg-yellow-50 border-yellow-200';
@@ -94,7 +98,7 @@ const ParticipationsList = () => {
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Mes participations</h1>
                 <p className="mt-1 text-sm text-gray-600">
-                    Suivez le statut de vos participations aux offres d'affiliation.
+                    Suivez le statut des offres auxquelles vous participez.
                 </p>
             </div>
 
@@ -102,9 +106,9 @@ const ParticipationsList = () => {
             <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
                 {[
                     { key: 'all', label: 'Toutes' },
-                    { key: 'en_attente', label: 'En attente' },
-                    { key: 'validee', label: 'Validées' },
-                    { key: 'refusee', label: 'Refusées' },
+                    { key: 'pending', label: 'En attente' },
+                    { key: 'approved', label: 'Approuvées' },
+                    { key: 'disapproved', label: 'Refusées' },
                 ].map((filterOption) => (
                     <button
                         key={filterOption.key}
@@ -127,7 +131,7 @@ const ParticipationsList = () => {
                         <div key={participation.id} className="card">
                             <div className="flex items-start space-x-4">
                                 <div className="flex-shrink-0">
-                                    {getStatusIcon(participation.status)}
+                                    {getOfferStatusIcon(participation.offer?.status)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between">
@@ -140,27 +144,27 @@ const ParticipationsList = () => {
                                             </p>
                                             <div className="flex items-center space-x-4 text-sm text-gray-500">
                                                 <span>
-                                                    Participé le {new Date(participation.clicked_at).toLocaleDateString('fr-FR', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
+                                                    Participé le {new Date(participation.created_at).toLocaleDateString('fr-FR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
                                                 </span>
                                                 {participation.offer?.commission && (
                                                     <div className="flex items-center space-x-1 text-green-600">
                                                         <CurrencyEuroIcon className="h-4 w-4" />
                                                         <span className="font-medium">
-                                                            {participation.offer.commission}€
+                                                            {participation.offer.commission} {participation.offer.currency_code}
                                                         </span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="flex-shrink-0 ml-4">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(participation.status)}`}>
-                                                {getStatusText(participation.status)}
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation.offer?.status)}`}>
+                                                {getOfferStatusText(participation.offer?.status)}
                                             </span>
                                         </div>
                                     </div>
@@ -173,12 +177,12 @@ const ParticipationsList = () => {
                 <div className="text-center py-12">
                     <ClockIcon className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        {filter === 'all' ? 'Aucune participation' : `Aucune participation ${filter === 'en_attente' ? 'en attente' : filter === 'validee' ? 'validée' : 'refusée'}`}
+                        {filter === 'all' ? 'Aucune participation' : `Aucune offre ${filter === 'pending' ? 'en attente' : filter === 'approved' ? 'approuvée' : 'refusée'}`}
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                        {filter === 'all' 
+                        {filter === 'all'
                             ? 'Vous n\'avez participé à aucune offre pour le moment.'
-                            : `Vous n'avez aucune participation avec ce statut.`
+                            : `Vous n'avez aucune offre avec ce statut.`
                         }
                     </p>
                 </div>
@@ -235,9 +239,9 @@ const ParticipationsList = () => {
                                         const start = Math.max(1, pagination.current_page - 2);
                                         page = start + index;
                                     }
-                                    
+
                                     if (page > pagination.last_page) return null;
-                                    
+
                                     return (
                                         <button
                                             key={page}

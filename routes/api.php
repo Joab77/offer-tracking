@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Routes utilisateur (nécessitent validation)
     Route::middleware('validated')->group(function () {
         Route::get('/offers', [OfferController::class, 'index']);
+        Route::get('/offers/{id}', [OfferController::class, 'show']);
         Route::post('/offers/{offer}/apply', [OfferController::class, 'apply']);
         Route::get('/participations', [ParticipationController::class, 'index']);
     });

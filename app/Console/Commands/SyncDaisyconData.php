@@ -7,18 +7,18 @@ use Illuminate\Console\Command;
 
 class SyncDaisyconData extends Command
 {
-    protected $signature = 'daisycon:sync';
-    protected $description = 'Synchronise les données avec l\'API Daisycon';
+    protected $signature = 'daisycon:sync-offers';
+    protected $description = 'Synchronise les offres avec l\'API Daisycon';
 
     public function handle(DaisyconService $daisyconService): int
     {
-        $this->info('Début de la synchronisation avec Daisycon...');
+        $this->info('Début de la synchronisation des offres avec Daisycon...');
 
         try {
-            $syncedCount = $daisyconService->syncTransactions();
+            $updatedCount = $daisyconService->syncOffers();
             $daisyconService->updateSyncInfo($syncedCount);
 
-            $this->info("Synchronisation terminée avec succès. {$syncedCount} transactions synchronisées.");
+            $this->info("Synchronisation terminée avec succès. {$updatedCount} offres mises à jour.");
             $this->info('Synchronisation terminée avec succès.');
             return Command::SUCCESS;
         } catch (\Exception $e) {
