@@ -3,3 +3,4 @@ node_modules
 .bolt
 .idea
 vendor
+storage/logs/laravel.log
