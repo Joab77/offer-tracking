@@ -16,7 +16,7 @@ class SyncDaisyconData extends Command
 
         try {
             $updatedCount = $daisyconService->syncOffers();
-            $daisyconService->updateSyncInfo($syncedCount);
+            $daisyconService->updateSyncInfo($updatedCount);
 
             $this->info("Synchronisation terminée avec succès. {$updatedCount} offres mises à jour.");
             $this->info('Synchronisation terminée avec succès.');
