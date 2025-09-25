@@ -61,7 +61,7 @@ class DaisyconController extends Controller
     public function syncNow(DaisyconService $daisyconService)
     {
         try {
-            $syncedCount = $daisyconService->syncTransactions();
+            $syncedCount = $daisyconService->syncOffers();
             $daisyconService->updateSyncInfo($syncedCount);
 
             return response()->json([

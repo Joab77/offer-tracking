@@ -29,21 +29,22 @@ class DaisyconService
                 return false;
             }
 
-            $response = Http::post(self::BASE_URL . '/login', [
+            $response = Http::post(self::BASE_URL . '/authenticate', [
                 'username' => $username,
                 'password' => $password,
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $this->accessToken = $data['access_token'] ?? null;
+                $this->accessToken = $data ?? null;
 
                 if ($this->accessToken) {
                     // Stocker le token temporairement (optionnel)
-                    Setting::set('daisycon_access_token', $this->accessToken, 'Token d\'accès temporaire', true);
+                    $s = Setting::set('daisycon_access_token', $this->accessToken, 'Token d\'accès temporaire', true);
                     return true;
                 }
             }
+
 
             Log::error('Daisycon authentication failed', [
                 'status' => $response->status(),
@@ -71,8 +72,11 @@ class DaisyconService
         try {
             $response = Http::withToken($this->accessToken)
                 ->get(self::BASE_URL . "/publishers/{$this->publisherId}/transactions", [
-                    'limit' => 1
+                    'limit' => 1,
+                    'start' => now()->subMonth()->format('Y-m-d H:i:s'),
+                    'end'   => now()->format('Y-m-d H:i:s'),
                 ]);
+
 
             if ($response->successful()) {
                 return [
@@ -80,7 +84,6 @@ class DaisyconService
                     'message' => 'Connexion réussie à l\'API Daisycon'
                 ];
             }
-
             return [
                 'success' => false,
                 'message' => 'Erreur lors du test de connexion: ' . $response->status()
@@ -174,17 +177,17 @@ class DaisyconService
     {
         try {
             $programId = $transaction['program_id'] ?? null;
-            $programName = $transaction['program_name'] ?? null;
 
             if (!$programId) {
+                Log::warning('Transaction sans program_id', $transaction);
                 return false;
             }
 
-            // Chercher l'offre correspondante par program_id
-            $offer = Offer::where('program_id', $programId)->first();
+            // Récupérer l'offre dont le deeplink contient le même program_id (si=...)
+            $offer = Offer::where('deeplink', 'LIKE', '%si=' . $programId . '%')->first();
 
             if (!$offer) {
-                Log::info('Offre non trouvée pour program_id: ' . $programId);
+                Log::info('Aucune offre trouvée pour program_id: ' . $programId);
                 return false;
             }
 
@@ -202,6 +205,7 @@ class DaisyconService
             return false;
         }
     }
+
 
     private function updateOfferFromPart(Offer $offer, array $transaction, array $part): void
     {
