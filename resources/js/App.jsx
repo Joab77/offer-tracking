@@ -10,6 +10,8 @@ import ResetPassword from './components/auth/ResetPassword';
 
 // Landing
 import Landing from './components/landing';
+import Faq from './pages/Faq';
+import Contact from './pages/Contact';
 
 // User Components
 import UserLayout from './components/layouts/UserLayout';
@@ -45,6 +47,8 @@ function App() {
             {/* Routes publiques */}
             <Route path="/login" element={!user ? <Login /> : <Navigate to={user.is_admin ? "/admin" : "/dashboard"} />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
             <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/dashboard" />} />
 

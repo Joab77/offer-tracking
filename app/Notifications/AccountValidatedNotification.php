@@ -22,7 +22,7 @@ class AccountValidatedNotification extends Notification
             ->greeting('Félicitations ' . $notifiable->name . ' !')
             ->line('Votre compte a été validé par notre équipe.')
             ->line('Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme.')
-            ->line('Commencez dès maintenant à explorer nos offres d\'affiliation.')
+            ->line('Commencez dès maintenant à explorer nos missions.')
             ->action('Accéder à la plateforme', url('/'))
             ->salutation('Cordialement, L\'équipe');
     }
