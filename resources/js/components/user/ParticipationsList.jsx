@@ -162,11 +162,16 @@ const ParticipationsList = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex-shrink-0 ml-4">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation.offer?.status)}`}>
-                                                {getOfferStatusText(participation.offer?.status)}
-                                            </span>
-                                        </div>
+                                        {
+                                            participation.offer?.status &&
+                                            <div className="flex-shrink-0 ml-4">
+                                                <span
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation.offer?.status)}`}>
+                                                    {getOfferStatusText(participation.offer?.status)}
+                                                </span>
+                                            </div>
+                                        }
+
                                     </div>
                                 </div>
                             </div>
@@ -175,7 +180,7 @@ const ParticipationsList = () => {
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <ClockIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <ClockIcon className="mx-auto h-12 w-12 text-gray-400"/>
                     <h3 className="mt-2 text-sm font-medium text-gray-900">
                         {filter === 'all' ? 'Aucune participation' : `Aucune offre ${filter === 'pending' ? 'en attente' : filter === 'approved' ? 'approuvée' : 'refusée'}`}
                     </h3>
