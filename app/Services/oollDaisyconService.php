@@ -3,12 +3,11 @@
 namespace App\Services;
 
 use App\Models\Offer;
-use App\Models\Participation;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class DaisyconService
+class oollDaisyconService
 {
     private const BASE_URL = 'https://services.daisycon.com';
     private $accessToken;
@@ -30,21 +29,22 @@ class DaisyconService
                 return false;
             }
 
-            $response = Http::post(self::BASE_URL . '/login', [
+            $response = Http::post(self::BASE_URL . '/authenticate', [
                 'username' => $username,
                 'password' => $password,
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $this->accessToken = $data['access_token'] ?? null;
+                $this->accessToken = $data ?? null;
 
                 if ($this->accessToken) {
                     // Stocker le token temporairement (optionnel)
-                    Setting::set('daisycon_access_token', $this->accessToken, 'Token d\'accès temporaire', true);
+                    $s = Setting::set('daisycon_access_token', $this->accessToken, 'Token d\'accès temporaire', true);
                     return true;
                 }
             }
+
 
             Log::error('Daisycon authentication failed', [
                 'status' => $response->status(),
@@ -72,8 +72,11 @@ class DaisyconService
         try {
             $response = Http::withToken($this->accessToken)
                 ->get(self::BASE_URL . "/publishers/{$this->publisherId}/transactions", [
-                    'limit' => 1
+                    'limit' => 1,
+                    'start' => now()->subMonth()->format('Y-m-d H:i:s'),
+                    'end'   => now()->format('Y-m-d H:i:s'),
                 ]);
+
 
             if ($response->successful()) {
                 return [
@@ -81,7 +84,6 @@ class DaisyconService
                     'message' => 'Connexion réussie à l\'API Daisycon'
                 ];
             }
-
             return [
                 'success' => false,
                 'message' => 'Erreur lors du test de connexion: ' . $response->status()
@@ -128,10 +130,10 @@ class DaisyconService
         }
     }
 
-    public function syncTransactions(): int
+    public function syncOffers(): int
     {
         if (!$this->authenticate()) {
-            Log::error('Impossible de s\'authentifier à Daisycon pour la sync des transactions');
+            Log::error('Impossible de s\'authentifier à Daisycon pour la sync des offres');
             return 0;
         }
 
@@ -148,7 +150,7 @@ class DaisyconService
             }
 
             foreach ($transactions['data'] as $transaction) {
-                if ($this->processTransaction($transaction)) {
+                if ($this->updateOfferFromTransaction($transaction)) {
                     $updatedCount++;
                 }
             }
@@ -159,44 +161,44 @@ class DaisyconService
 
             // Limite de sécurité pour éviter les boucles infinies
             if ($page > 100) {
-                Log::warning('Limite de pages atteinte lors de la sync des transactions Daisycon');
+                Log::warning('Limite de pages atteinte lors de la sync des offres Daisycon');
                 break;
             }
         }
 
-        Log::info("Synchronisation des transactions Daisycon terminée", [
-            'transactions_processed' => $updatedCount
+        Log::info("Synchronisation des offres Daisycon terminée", [
+            'offers_updated' => $updatedCount
         ]);
 
         return $updatedCount;
     }
 
-    private function processTransaction(array $transaction): bool
+    private function updateOfferFromTransaction(array $transaction): bool
     {
         try {
-            $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
             $programId = $transaction['program_id'] ?? null;
 
-            if (!$affiliatemarketingId || !$programId) {
-                Log::warning('Transaction incomplète', ['transaction' => $transaction]);
-                return false;
-            }
-            // Trouver l'offre correspondante par program_id
-            // Note: Il faudra ajouter un champ program_id dans offers ou utiliser une autre logique de mapping
-            $offer = $this->findOfferByProgramId($programId);
-            if (!$offer) {
-                Log::info('Offre non trouvée pour program_id: ' . $programId);
+            if (!$programId) {
+                Log::warning('Transaction sans program_id', $transaction);
                 return false;
             }
 
-            // Traiter chaque part de la transaction
+            // Récupérer l'offre dont le deeplink contient le même program_id (si=...)
+            $offer = Offer::where('deeplink', 'LIKE', '%si=' . $programId . '%')->first();
+
+            if (!$offer) {
+                Log::info('Aucune offre trouvée pour program_id: ' . $programId);
+                return false;
+            }
+
+            // Traiter chaque part de la transaction pour mettre à jour l'offre
             foreach ($transaction['parts'] as $part) {
-                $this->processTransactionPart($offer, $transaction, $part);
+                $this->updateOfferFromPart($offer, $transaction, $part);
             }
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Erreur lors du traitement de la transaction', [
+            Log::error('Erreur lors de la mise à jour de l\'offre', [
                 'transaction' => $transaction,
                 'error' => $e->getMessage()
             ]);
@@ -204,49 +206,30 @@ class DaisyconService
         }
     }
 
-    private function processTransactionPart(Offer $offer, array $transaction, array $part): void
+
+    private function updateOfferFromPart(Offer $offer, array $transaction, array $part): void
     {
-        $transactionId = $transaction['affiliatemarketing_id'] . '_' . $part['id'];
+        // Mapper le statut Daisycon vers notre système
+        $status = $this->mapDaisyconStatus($part['status'] ?? 'pending');
 
-        // Chercher une participation existante
-        $participation = Participation::findByTransactionId($transactionId);
-
-        $participationData = [
-            'transaction_id' => $transactionId,
-            'status' => $this->mapDaisyconStatus($part['status'] ?? 'pending'),
-            'commission' => $part['commission'] ?? null,
-            'currency_code' => $part['currency_code'] ?? null,
+        // Mettre à jour les données de l'offre
+        $offerData = [
+            'status' => $status,
+            'commission' => $part['commission'] ?? $offer->commission,
+            'currency_code' => $part['currency_code'] ?? $offer->currency_code,
+            'program_id' => $transaction['program_id'] ?? null,
+            'program_name' => $transaction['program_name'] ?? null,
+            'last_updated_daisycon' => isset($part['last_modified']) ?
+                \Carbon\Carbon::parse($part['last_modified']) : now(),
             'raw_data' => [
                 'transaction' => $transaction,
                 'part' => $part
             ]
         ];
 
-        if ($participation) {
-            // Mettre à jour la participation existante
-            $participation->update($participationData);
-            Log::info('Participation mise à jour', [
-                'participation_id' => $participation->id,
-                'transaction_id' => $transactionId
-            ]);
-        } else {
-            // Créer une nouvelle participation
-            // Note: Il faudra déterminer comment associer user_id
-            // Peut-être via des données dans raw_data ou un autre mécanisme
-            Log::info('Nouvelle transaction Daisycon sans participation locale', [
-                'transaction_id' => $transactionId,
-                'offer_id' => $offer->id
-            ]);
-        }
-    }
-
-    private function findOfferByProgramId(int $programId): ?Offer
-    {
-        // TODO: Implémenter la logique pour trouver l'offre
-        // Soit ajouter un champ program_id dans offers
-        // Soit utiliser une table de mapping
-        // Pour l'instant, retourner null
-        return null;
+        // Mettre à jour l'offre
+        $offer->update($offerData);
+        Log::info('Offre mise à jour', ['offer_id' => $offer->id, 'program_id' => $transaction['program_id']]);
     }
 
     private function mapDaisyconStatus(string $daisyconStatus): string
@@ -272,7 +255,7 @@ class DaisyconService
 
     public function updateSyncInfo(int $syncedCount): void
     {
-        Setting::set('daisycon_last_sync', now()->toISOString(), 'Dernière synchronisation des transactions Daisycon');
-        Setting::set('daisycon_last_sync_count', $syncedCount, 'Nombre de transactions traitées');
+        Setting::set('daisycon_last_sync', now()->toISOString(), 'Dernière synchronisation des offres Daisycon');
+        Setting::set('daisycon_last_sync_count', $syncedCount, 'Nombre d\'offres mises à jour');
     }
 }

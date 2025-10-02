@@ -12,8 +12,17 @@ class Participation extends Model
     protected $fillable = [
         'user_id',
         'offer_id',
+        'transaction_id',
+        'status',
+        'commission',
+        'currency_code',
+        'raw_data',
     ];
 
+    protected $casts = [
+        'commission' => 'decimal:2',
+        'raw_data' => 'array',
+    ];
 
     public function user()
     {
@@ -23,5 +32,25 @@ class Participation extends Model
     public function offer()
     {
         return $this->belongsTo(Offer::class);
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isDisapproved(): bool
+    {
+        return $this->status === 'disapproved';
+    }
+
+    public static function findByTransactionId(string $transactionId): ?self
+    {
+        return static::where('transaction_id', $transactionId)->first();
     }
 }

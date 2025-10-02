@@ -11,7 +11,7 @@ class OfferController extends Controller
 {
     public function index(Request $request)
     {
-        // Récupérer le code pays depuis l'en-tête
+        // Récupérer le pays depuis les headers de la requête (géolocalisation temps réel)
         $userCountry = $request->header('X-Country');
 
         if (!$userCountry) {
@@ -60,7 +60,7 @@ class OfferController extends Controller
         if ($offer->country !== strtoupper($userCountry)) {
             return response()->json([
                 'message' => 'Cette offre n\'est pas disponible dans votre pays'
-            ]);
+            ], 403);
         }
 
         // Vérifier si l'utilisateur a déjà participé
@@ -77,13 +77,11 @@ class OfferController extends Controller
             'user_id' => $user->id,
             'offer_id' => $offer->id,
         ]);
-
-
         return response()->json([
-            'message' => 'Participation enregistrée avec succès',
+        'message' => 'Participation enregistrée avec succès',
             'participation' => $participation,
             'action' => 'participate',
-            'deeplink' => $offer->deeplink
-        ], 201);
+            'deeplink' => $offer->deeplink,
+        ]);
     }
 }
