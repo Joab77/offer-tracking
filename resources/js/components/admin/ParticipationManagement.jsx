@@ -22,9 +22,9 @@ const ParticipationManagement = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [stats, setStats] = useState({
         total: 0,
-        validated: 0,
-        pending: 0,
-        rejected: 0,
+        approved: 0,
+        opened: 0,
+        disapproved: 0,
     });
 
     useEffect(() => {
@@ -54,9 +54,9 @@ const ParticipationManagement = () => {
             // Calculer les statistiques
             setStats({
                 total: data.length,
-                validated: data.filter(p => p.status === 'validee').length,
-                pending: data.filter(p => p.status === 'en_attente').length,
-                rejected: data.filter(p => p.status === 'refusee').length,
+                approved: data.filter(p => p.status === 'approved').length,
+                opened: data.filter(p => p.status === 'opened').length,
+                disapproved: data.filter(p => p.status === 'disapproved').length,
             });
         } catch (error) {
             console.error('Erreur lors du chargement des participations:', error);
@@ -86,9 +86,9 @@ const ParticipationManagement = () => {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-            case 'refusee':
+            case 'disapproved':
                 return <XCircleIcon className="h-5 w-5 text-red-500" />;
             default:
                 return <ClockIcon className="h-5 w-5 text-yellow-500" />;
@@ -96,21 +96,14 @@ const ParticipationManagement = () => {
     };
 
     const getStatusText = (status) => {
-        switch (status) {
-            case 'validee':
-                return 'Validée';
-            case 'refusee':
-                return 'Refusée';
-            default:
-                return 'En attente';
-        }
+        return status;
     };
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'validee':
+            case 'approved':
                 return 'text-green-700 bg-green-50 border-green-200';
-            case 'refusee':
+            case 'disapproved':
                 return 'text-red-700 bg-red-50 border-red-200';
             default:
                 return 'text-yellow-700 bg-yellow-50 border-yellow-200';
@@ -129,6 +122,15 @@ const ParticipationManagement = () => {
         };
         return countries[code] || code;
     };
+
+    const getDate = (rawData) => {
+        return rawData?.transaction?.date ?? null;
+    };
+
+    const getIp = (rawData) => {
+        return rawData?.transaction?.anonymous_ip ?? null;
+    };
+
 
     if (loading && currentPage === 1) {
         return <LoadingSpinner />;
@@ -172,10 +174,10 @@ const ParticipationManagement = () => {
                         <div className="ml-5 w-0 flex-1">
                             <dl>
                                 <dt className="text-sm font-medium text-gray-500 truncate">
-                                    Validées
+                                    Approved
                                 </dt>
                                 <dd className="text-lg font-medium text-gray-900">
-                                    {stats.validated}
+                                    {stats.approved}
                                 </dd>
                             </dl>
                         </div>
@@ -190,10 +192,10 @@ const ParticipationManagement = () => {
                         <div className="ml-5 w-0 flex-1">
                             <dl>
                                 <dt className="text-sm font-medium text-gray-500 truncate">
-                                    En attente
+                                    Opened
                                 </dt>
                                 <dd className="text-lg font-medium text-gray-900">
-                                    {stats.pending}
+                                    {stats.opened}
                                 </dd>
                             </dl>
                         </div>
@@ -208,10 +210,10 @@ const ParticipationManagement = () => {
                         <div className="ml-5 w-0 flex-1">
                             <dl>
                                 <dt className="text-sm font-medium text-gray-500 truncate">
-                                    Refusées
+                                    Disapproved
                                 </dt>
                                 <dd className="text-lg font-medium text-gray-900">
-                                    {stats.rejected}
+                                    {stats.disapproved}
                                 </dd>
                             </dl>
                         </div>
@@ -226,9 +228,9 @@ const ParticipationManagement = () => {
                     <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                         {[
                             { key: 'all', label: 'Toutes' },
-                            { key: 'en_attente', label: 'En attente' },
-                            { key: 'validee', label: 'Validées' },
-                            { key: 'refusee', label: 'Refusées' },
+                            { key: 'opened', label: 'Opened' },
+                            { key: 'approved', label: 'Approved' },
+                            { key: 'disapproved', label: 'Disapproved' },
                         ].map((filterOption) => (
                             <button
                                 key={filterOption.key}
@@ -292,6 +294,9 @@ const ParticipationManagement = () => {
                                                 <div className="text-sm text-gray-500">
                                                     {participation.user?.email}
                                                 </div>
+                                                <div className="text-sm text-gray-500">
+                                                    { getIp(participation.raw_data) }
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -307,7 +312,7 @@ const ParticipationManagement = () => {
                                         <div className="flex items-center space-x-1 text-green-600">
                                             <CurrencyEuroIcon className="h-4 w-4" />
                                             <span className="text-sm font-medium">
-                                                    {participation.offer?.commission}€
+                                                    {participation?.commission}€
                                                 </span>
                                         </div>
                                     </td>
@@ -320,7 +325,7 @@ const ParticipationManagement = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(participation.clicked_at).toLocaleDateString('fr-FR', {
+                                        {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
                                             year: 'numeric',
                                             month: 'short',
                                             day: 'numeric',

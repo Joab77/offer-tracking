@@ -29,8 +29,9 @@ const ParticipationsList = () => {
 
             // Filtrer côté client selon le statut de l'offre
             if (filter !== 'all') {
-                filteredParticipations = response.data.data.filter(p => p.offer?.status === filter);
+                filteredParticipations = response.data.data.filter(p => p?.status === filter);
             }
+            console.log("filter", filter)
 
             setParticipations(filteredParticipations);
             setPagination({
@@ -88,6 +89,10 @@ const ParticipationsList = () => {
         setCurrentPage(1);
     };
 
+    const getDate = (rawData) => {
+        return rawData?.transaction?.date ?? null;
+    };
+
     if (loading && currentPage === 1) {
         return <LoadingSpinner />;
     }
@@ -106,9 +111,9 @@ const ParticipationsList = () => {
             <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
                 {[
                     { key: 'all', label: 'Toutes' },
-                    { key: 'pending', label: 'En attente' },
-                    { key: 'approved', label: 'Approuvées' },
-                    { key: 'disapproved', label: 'Refusées' },
+                    { key: 'opened', label: 'Opened' },
+                    { key: 'approved', label: 'Approved' },
+                    { key: 'disapproved', label: 'Disapproved' },
                 ].map((filterOption) => (
                     <button
                         key={filterOption.key}
@@ -131,7 +136,7 @@ const ParticipationsList = () => {
                         <div key={participation.id} className="card">
                             <div className="flex items-start space-x-4">
                                 <div className="flex-shrink-0">
-                                    {getOfferStatusIcon(participation.offer?.status)}
+                                    {getOfferStatusIcon(participation?.status)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between">
@@ -144,7 +149,7 @@ const ParticipationsList = () => {
                                             </p>
                                             <div className="flex items-center space-x-4 text-sm text-gray-500">
                                                 <span>
-                                                    Participé le {new Date(participation.created_at).toLocaleDateString('fr-FR', {
+                                                    {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
@@ -152,22 +157,22 @@ const ParticipationsList = () => {
                                                     minute: '2-digit'
                                                 })}
                                                 </span>
-                                                {participation.offer?.commission && (
+                                                {participation?.commission && (
                                                     <div className="flex items-center space-x-1 text-green-600">
                                                         <CurrencyEuroIcon className="h-4 w-4" />
                                                         <span className="font-medium">
-                                                            {participation.offer.commission} {participation.offer.currency_code}
+                                                            {participation.commission} €
                                                         </span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                         {
-                                            participation.offer?.status &&
+                                            participation?.status &&
                                             <div className="flex-shrink-0 ml-4">
                                                 <span
-                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation.offer?.status)}`}>
-                                                    {getOfferStatusText(participation.offer?.status)}
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation?.status)}`}>
+                                                    {getOfferStatusText(participation?.status)}
                                                 </span>
                                             </div>
                                         }

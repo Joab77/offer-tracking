@@ -19,7 +19,6 @@ const schema = yup.object({
     title: yup.string().required('Titre requis').min(3, 'Le titre doit contenir au moins 3 caractères'),
     description: yup.string().required('Description requise').min(10, 'La description doit contenir au moins 10 caractères'),
     image_url: yup.string().url('URL invalide').nullable(),
-    commission: yup.number().required('Commission requise').min(0, 'La commission doit être positive'),
     country: yup.string().required('Pays requis'),
     deeplink: yup.string().required('URL Daisycon requise').url('URL invalide'),
     api_key: yup.string().nullable(),
@@ -95,7 +94,6 @@ const OfferManagement = () => {
         setValue('title', offer.title);
         setValue('description', offer.description);
         setValue('image_url', offer.image_url || '');
-        setValue('commission', offer.commission);
         setValue('country', offer.country);
         setValue('deeplink', offer.deeplink);
         setValue('api_key', offer.api_key || '');
@@ -109,6 +107,7 @@ const OfferManagement = () => {
     };
 
     const onSubmit = async (data) => {
+        console.log("sss")
         try {
             setSubmitting(true);
 
@@ -247,9 +246,6 @@ const OfferManagement = () => {
                                     Offre
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Commission
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Pays
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -283,11 +279,6 @@ const OfferManagement = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-sm font-medium text-green-600">
-                                                {offer.commission}€
-                                            </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -484,22 +475,6 @@ const OfferManagement = () => {
                                         )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Commission (€)
-                                        </label>
-                                        <input
-                                            {...register('commission')}
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            className="input-field mt-1"
-                                            placeholder="25.50"
-                                        />
-                                        {errors.commission && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.commission.message}</p>
-                                        )}
-                                    </div>
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">
@@ -630,12 +605,6 @@ const OfferManagement = () => {
                                     <p className="mt-1 text-sm text-gray-900">{selectedOffer.description}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Commission</label>
-                                        <p className="mt-1 text-sm text-gray-900 font-medium text-green-600">
-                                            {selectedOffer.commission}€
-                                        </p>
-                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Pays</label>
                                         <p className="mt-1 text-sm text-gray-900">{getCountryName(selectedOffer.country)}</p>

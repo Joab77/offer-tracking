@@ -14,7 +14,8 @@ class Offer extends Model
         'description',
         'deeplink',
         'country',
-        'image_url'
+        'image_url',
+        'program_id'
     ];
 
 
