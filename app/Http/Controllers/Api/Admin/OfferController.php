@@ -29,10 +29,8 @@ class OfferController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'image_url' => 'nullable|url',
-            'commission' => 'required|numeric|min:0',
             'country' => 'required|string|size:2',
             'deeplink' => 'required|url',
-            'api_key' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -42,14 +40,22 @@ class OfferController extends Controller
             ], 422);
         }
 
+        $deeplink = $request->deeplink;
+
+        // extraction de l’offer_id depuis le lien
+        $query = parse_url($deeplink, PHP_URL_QUERY);
+        parse_str($query, $params);
+
+        $programId = $params['si'] ?? null;
+
+
         $offer = Offer::create([
             'title' => $request->title,
             'description' => $request->description,
             'image_url' => $request->image_url,
-            'commission' => $request->commission,
             'country' => strtoupper($request->country),
             'deeplink' => $request->deeplink,
-            'api_key' => $request->api_key,
+            'program_id' => $programId,
         ]);
 
         return response()->json([
@@ -64,10 +70,8 @@ class OfferController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'image_url' => 'nullable|url',
-            'commission' => 'required|numeric|min:0',
             'country' => 'required|string|size:2',
             'deeplink' => 'required|url',
-            'api_key' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -77,14 +81,20 @@ class OfferController extends Controller
             ], 422);
         }
 
+        $deeplink = $request->deeplink;
+
+        $query = parse_url($deeplink, PHP_URL_QUERY);
+        parse_str($query, $params);
+
+        $programId = $params['si'] ?? null;
+
         $offer->update([
             'title' => $request->title,
             'description' => $request->description,
             'image_url' => $request->image_url,
-            'commission' => $request->commission,
             'country' => strtoupper($request->country),
             'deeplink' => $request->deeplink,
-            'api_key' => $request->api_key,
+            'program_id' => $programId,
         ]);
 
         return response()->json([

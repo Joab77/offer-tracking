@@ -13,22 +13,11 @@ class Offer extends Model
         'title',
         'description',
         'deeplink',
-        'status',
-        'commission',
-        'currency_code',
         'country',
-        'program_id',
-        'program_name',
         'image_url',
-        'last_updated_daisycon',
-        'raw_data',
+        'program_id'
     ];
 
-    protected $casts = [
-        'commission' => 'decimal:2',
-        'last_updated_daisycon' => 'datetime',
-        'raw_data' => 'array',
-    ];
 
     public function participations()
     {
@@ -40,18 +29,4 @@ class Offer extends Model
         return $this->participations()->where('user_id', $userId)->exists();
     }
 
-    public function isApproved(): bool
-    {
-        return $this->status === 'approved';
-    }
-
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-
-    public function isDisapproved(): bool
-    {
-        return $this->status === 'disapproved';
-    }
 }

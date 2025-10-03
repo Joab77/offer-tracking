@@ -51,7 +51,7 @@ class DaisyconController extends Controller
         ]);
     }
 
-    public function testConnection(DaisyconService $daisyconService)
+    public function testConnection(DaisyconService $daisyconService): \Illuminate\Http\JsonResponse
     {
         $result = $daisyconService->testConnection();
 
@@ -61,7 +61,7 @@ class DaisyconController extends Controller
     public function syncNow(DaisyconService $daisyconService)
     {
         try {
-            $syncedCount = $daisyconService->syncOffers();
+            $syncedCount = $daisyconService->syncTransactions();
             $daisyconService->updateSyncInfo($syncedCount);
 
             return response()->json([

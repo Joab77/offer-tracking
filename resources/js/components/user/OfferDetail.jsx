@@ -113,14 +113,7 @@ const OfferDetail = () => {
     };
 
     const getStatusText = (status) => {
-        switch (status) {
-            case 'approved':
-                return 'Approuvée';
-            case 'disapproved':
-                return 'Refusée';
-            default:
-                return 'En attente';
-        }
+        return status;
     };
     if (loading) {
         return <LoadingSpinner />;
@@ -175,12 +168,6 @@ const OfferDetail = () => {
                                     {offer.title}
                                 </h1>
                                 <div className="flex items-center space-x-4 mb-4">
-                                    <div className="flex items-center space-x-1 text-green-600">
-                                        <CurrencyEuroIcon className="h-5 w-5" />
-                                        <span className="text-lg font-semibold">
-                                            {offer.commission} {offer.currency_code} de commission
-                                        </span>
-                                    </div>
                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                                         {offer.country}
                                     </span>

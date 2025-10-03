@@ -3,13 +3,11 @@
 namespace App\Services;
 
 use App\Models\Offer;
-use App\Models\Participation;
 use App\Models\Setting;
-use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class DaisyconService
+class oollDaisyconService
 {
     private const BASE_URL = 'https://services.daisycon.com';
     private $accessToken;
@@ -110,11 +108,8 @@ class DaisyconService
                 [
                     'page' => $page,
                     'limit' => $limit,
-                    'start' => now()->startOfYear()->format('Y-m-d H:i:s'),
-                    'end'   => now()->format('Y-m-d H:i:s'),
                 ]
             );
-
 
             if ($response->successful()) {
                 return $response->json();
@@ -135,110 +130,107 @@ class DaisyconService
         }
     }
 
-    public function syncTransactions(): int
+    public function syncOffers(): int
     {
         if (!$this->authenticate()) {
-            Log::error('Impossible de s\'authentifier à Daisycon pour la sync des transactions');
+            Log::error('Impossible de s\'authentifier à Daisycon pour la sync des offres');
             return 0;
         }
 
         $updatedCount = 0;
         $page = 1;
+        $hasMorePages = true;
 
-        $transactions = $this->getTransactions($page);
+        while ($hasMorePages) {
+            $transactions = $this->getTransactions($page);
 
-        foreach ($transactions as $transaction) {
-            if ($this->processTransaction($transaction)) {
-                $updatedCount++;
+            if (empty($transactions['data'])) {
+                $hasMorePages = false;
+                continue;
+            }
+
+            foreach ($transactions['data'] as $transaction) {
+                if ($this->updateOfferFromTransaction($transaction)) {
+                    $updatedCount++;
+                }
+            }
+
+            // Vérifier s'il y a d'autres pages
+            $hasMorePages = isset($transactions['pagination']['has_next']) && $transactions['pagination']['has_next'];
+            $page++;
+
+            // Limite de sécurité pour éviter les boucles infinies
+            if ($page > 100) {
+                Log::warning('Limite de pages atteinte lors de la sync des offres Daisycon');
+                break;
             }
         }
 
-        Log::info("Synchronisation des transactions Daisycon terminée", [
-            'transactions_processed' => $updatedCount
+        Log::info("Synchronisation des offres Daisycon terminée", [
+            'offers_updated' => $updatedCount
         ]);
 
         return $updatedCount;
     }
 
-    private function processTransaction(array $transaction): bool
+    private function updateOfferFromTransaction(array $transaction): bool
     {
-        $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
-        $programId = $transaction['program_id'] ?? null;
+        try {
+            $programId = $transaction['program_id'] ?? null;
 
-        if (!$affiliatemarketingId || !$programId) {
-            dd("2");
-            Log::warning('Transaction incomplète', ['transaction' => $transaction]);
+            if (!$programId) {
+                Log::warning('Transaction sans program_id', $transaction);
+                return false;
+            }
+
+            // Récupérer l'offre dont le deeplink contient le même program_id (si=...)
+            $offer = Offer::where('deeplink', 'LIKE', '%si=' . $programId . '%')->first();
+
+            if (!$offer) {
+                Log::info('Aucune offre trouvée pour program_id: ' . $programId);
+                return false;
+            }
+
+            // Traiter chaque part de la transaction pour mettre à jour l'offre
+            foreach ($transaction['parts'] as $part) {
+                $this->updateOfferFromPart($offer, $transaction, $part);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la mise à jour de l\'offre', [
+                'transaction' => $transaction,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
-        // Trouver l'offre correspondante par program_id
-        // Note: Il faudra ajouter un champ program_id dans offers ou utiliser une autre logique de mapping
-        $offer = $this->findOfferByProgramId($programId);
-        if (!$offer) {
-            Log::info('Offre non trouvée pour program_id: ' . $programId);
-            return false;
-        }
-
-        // Traiter chaque part de la transaction
-        foreach ($transaction['parts'] as $part) {
-            $this->processTransactionPart($offer, $transaction, $part);
-        }
-
-        return true;
     }
 
-    private function processTransactionPart(Offer $offer, array $transaction, array $part): void
+
+    private function updateOfferFromPart(Offer $offer, array $transaction, array $part): void
     {
-        $transactionId = $transaction['affiliatemarketing_id'] . '_' . $part['id'];
+        // Mapper le statut Daisycon vers notre système
+        $status = $this->mapDaisyconStatus($part['status'] ?? 'pending');
 
-
-        // Chercher une participation existante
-        $participation = Participation::findByTransactionId($transactionId);
-
-        $participationData = [
-            'transaction_id' => $transactionId,
-            'status' => $this->mapDaisyconStatus($part['status'] ?? 'pending'),
-            'commission' => $part['commission'] ?? null,
-            'currency_code' => $part['currency_code'] ?? null,
+        // Mettre à jour les données de l'offre
+        $offerData = [
+            'status' => $status,
+            'commission' => $part['commission'] ?? $offer->commission,
+            'currency_code' => $part['currency_code'] ?? $offer->currency_code,
+            'program_id' => $transaction['program_id'] ?? null,
+            'program_name' => $transaction['program_name'] ?? null,
+            'last_updated_daisycon' => isset($part['last_modified']) ?
+                \Carbon\Carbon::parse($part['last_modified']) : now(),
             'raw_data' => [
                 'transaction' => $transaction,
                 'part' => $part
             ]
         ];
 
-        $userId = $part['subid'] ?? null;
-        if ($userId) {
-            $participationData['user_id'] = $userId;
-        }
-
-        if ($participation) {
-            // Mettre à jour la participation existante
-            $participation->update($participationData);
-            Log::info('Participation mise à jour', [
-                'participation_id' => $participation->id,
-                'transaction_id' => $transactionId
-            ]);
-        } else {
-            if(!@$participationData["user_id"]) {
-                $participationData["user_id"] = 9 ?? User::first()->id;
-            }
-
-            Participation::create(array_merge(
-                ['offer_id' => $offer->id],
-                $participationData
-            ));
-
-            Log::info('Nouvelle transaction Daisycon sans participation locale', [
-                'transaction_id' => $transactionId,
-                'offer_id' => $offer->id
-            ]);
-        }
+        // Mettre à jour l'offre
+        $offer->update($offerData);
+        Log::info('Offre mise à jour', ['offer_id' => $offer->id, 'program_id' => $transaction['program_id']]);
     }
-
-    private function findOfferByProgramId(int $programId): ?Offer
-    {
-        return Offer::where('program_id', $programId)->first();
-    }
-
 
     private function mapDaisyconStatus(string $daisyconStatus): string
     {
@@ -263,7 +255,7 @@ class DaisyconService
 
     public function updateSyncInfo(int $syncedCount): void
     {
-        Setting::set('daisycon_last_sync', now()->toISOString(), 'Dernière synchronisation des transactions Daisycon');
-        Setting::set('daisycon_last_sync_count', $syncedCount, 'Nombre de transactions traitées');
+        Setting::set('daisycon_last_sync', now()->toISOString(), 'Dernière synchronisation des offres Daisycon');
+        Setting::set('daisycon_last_sync_count', $syncedCount, 'Nombre d\'offres mises à jour');
     }
 }
