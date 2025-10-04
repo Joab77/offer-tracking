@@ -18,6 +18,7 @@ class User extends Authenticatable
         'pays',
         'validated',
         'is_admin',
+        'country',
     ];
 
     protected $hidden = [

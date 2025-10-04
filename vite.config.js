@@ -14,7 +14,7 @@ export default defineConfig({
         tailwindcss(),
     ],
     build: {
-        outDir: 'public/react',
+        outDir: 'public/build',
         emptyOutDir: true
     },
     resolve: {

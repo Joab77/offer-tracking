@@ -29,10 +29,14 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $localisation = new \App\Services\LocalisationService();
+        $country = $localisation->getCountryWithIP($request->ip());
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'country' => $country,
         ]);
 
         $user->notify(new WelcomeNotification());

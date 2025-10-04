@@ -34,9 +34,12 @@ const Register = () => {
 
     // Exemple : récupérer la localisation IP via un service public (à déplacer en backend en prod)
     useEffect(() => {
-        fetch("https://ipapi.co/json/") // tu peux remplacer par ton backend
+        fetch("https://ipinfo.io/json/") // tu peux remplacer par ton backend
             .then((res) => res.json())
-            .then((data) => setCountry(data.country_code))
+            .then((data) => {
+                setCountry(data.country_code)
+                console.log(data)
+            })
             .catch(() => setCountry("FR")); // fallback France
     }, []);
 
