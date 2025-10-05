@@ -218,9 +218,6 @@ class DaisyconService
                 'transaction_id' => $transactionId
             ]);
         } else {
-            if(!@$participationData["user_id"]) {
-                $participationData["user_id"] = 9 ?? User::first()->id;
-            }
 
             Participation::create(array_merge(
                 ['offer_id' => $offer->id],
