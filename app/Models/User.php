@@ -31,6 +31,7 @@ class User extends Authenticatable
         'validated' => 'boolean',
         'is_admin' => 'boolean',
         'password' => 'hashed',
+        'country' => 'array',
     ];
 
     public function participations()

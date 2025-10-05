@@ -12,16 +12,18 @@ class OfferController extends Controller
     public function index(Request $request)
     {
         // Récupérer le code pays depuis l'en-tête
-        $userCountry = $request->header('X-Country');
+        $user = $request->user();
 
-        if (!$userCountry) {
+        // $userCountry = $request->header('X-Country');
+
+        if (!$user->country) {
             return response()->json([
                 'message' => 'Localisation requise pour afficher les offres',
                 'error' => 'GEOLOCATION_REQUIRED'
             ], 400);
         }
 
-        $offers = Offer::where('country', strtoupper($userCountry))
+        $offers = Offer::where('country', strtoupper($user->country['country_code']))
             ->latest()
             ->paginate(20);
 
