@@ -11,6 +11,8 @@ class ParticipationController extends Controller
     public function index(Request $request)
     {
         $query = Participation::with(['user', 'offer']);
+         // Exclure les participations sans statut
+        $query->whereNotNull('status');
 
         // Filtrer par statut
         if ($request->has('status')) {

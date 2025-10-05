@@ -29,10 +29,15 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $localisation = new \App\Services\LocalisationService();
+        $country = $localisation->getCountryWithIP($request->ip());
+
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'country' => $country,
         ]);
 
         $user->notify(new WelcomeNotification());
@@ -182,6 +187,31 @@ class AuthController extends Controller
             'message' => 'Profil mis à jour avec succès',
             'user' => $user,
         ]);
+    }
+
+    public function updateCountryFromIP(Request $request)
+    {
+        $user = $request->user();
+
+        $localisation = new \App\Services\LocalisationService();
+        $country = $localisation->getCountryWithIP($request->ip());
+        
+
+        if ($country) {
+            $user->country = $country;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pays mis à jour avec succès',
+                'user' => $user,
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impossible de déterminer le pays',
+            ], 500);
+        }
     }
 
 

@@ -5,8 +5,7 @@ import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
 import Alert from '@/utils/alert';
 import axios from 'axios';
-import { UserIcon, EnvelopeIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
-import {useLocation} from "../../hooks/useLocation";
+import { UserIcon, EnvelopeIcon, GlobeAltIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const schema = yup.object({
     name: yup.string().required('Nom requis').min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -26,7 +25,9 @@ const countries = [
 const Profile = () => {
     const { user, checkAuth } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
-    const { country, code, loading: loadingLocation, error: locationError } = useLocation();
+    const [showEditCountryModal, setShowEditCountryModal] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
 
     const {
         register,
@@ -42,6 +43,7 @@ const Profile = () => {
     });
 
     const onSubmit = async (data) => {
+        
         try {
             setIsLoading(true);
             await axios.put('/api/profile', data);
@@ -62,6 +64,37 @@ const Profile = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const onCountryDataLoadSubmit = async (data) => {
+        console.log("onCountryDataLoadSubmit", data);
+        try {
+            setSubmitting(true);
+            await axios.put('/api/country/reload', data);
+            Alert.success('Profil mis à jour avec succès !');
+            
+            await checkAuth(); // Recharger les données utilisateur
+        } catch (error) {
+            
+            const message = error.response?.data?.message || 'Erreur lors de la mise à jour';
+            Alert.error(message);
+
+            if (error.response?.data?.errors) {
+                Object.keys(error.response.data.errors).forEach((field) => {
+                    setError(field, {
+                        type: 'server',
+                        message: error.response.data.errors[field][0],
+                    });
+                });
+            }
+        } finally {
+            setSubmitting(false);
+            setShowEditCountryModal(false);
+        }
+    };
+
+    const closeModal = () => {
+        setShowEditCountryModal(false)
     };
 
 
@@ -103,13 +136,17 @@ const Profile = () => {
                                 <div className="flex-shrink-0">
                                     <GlobeAltIcon className="h-5 w-5 text-gray-400" />
                                 </div>
-                                <div>
-                                    {loadingLocation && <p>Chargement de la localisation...</p>}
-                                    {locationError && <p className="text-red-600">{locationError}</p>}
-                                    {!loadingLocation && !locationError && (
-                                        <p className="text-sm font-medium text-gray-900">{country}, {code}</p>
-                                    )}
-                                    <p className="text-sm text-gray-500">Pays</p>
+                                <div className='flex items-center justify-between w-full flex-nowrap'>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">{user?.country?.city}, {user?.country?.country_code}</p>
+                                        <p className="text-sm text-gray-500">Pays</p>
+                                    </div>
+
+                                    <div>
+                                        <a onClick={() => setShowEditCountryModal(true)} className="ml-4 inline-flex items-center px-2.5 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                            <ArrowPathIcon className="h-5 w-5 text-gray-400" />
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -196,6 +233,59 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal création/modification */}
+            {showEditCountryModal && (
+                
+                           // Modal sans overlay gris — positionné au‑dessus du contenu existant
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 pointer-events-none">
+                    <div className="mx-4 w-full max-w-lg p-6 border shadow-lg rounded-lg bg-white pointer-events-auto">
+                         <div className="mt-1">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    Actualiser mon pays
+                                </h3>
+                                <button
+                                    onClick={closeModal}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit(onCountryDataLoadSubmit)} className="space-y-4">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    {/* champs pour sélectionner / actualiser le pays */}
+                                    Voulez-vous vraiment actualiser votre pays
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="btn-secondary"
+                                    >
+                                        Non Annuler
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submitting ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <span>Oui Actualiser</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

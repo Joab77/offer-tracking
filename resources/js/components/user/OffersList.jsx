@@ -3,29 +3,21 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { TagIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline';
-import {useLocation} from "@/hooks/useLocation.jsx";
 
 const OffersList = () => {
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const { country, code, loading: geoLoading } = useLocation();
 
     useEffect(() => {
-        if (!geoLoading && code) {
-            fetchOffers(currentPage, code);
-        }
-    }, [currentPage, geoLoading, code]);
+        fetchOffers(currentPage);
+    }, [currentPage]);
 
-    const fetchOffers = async (page = 1, userCountry) => {
+    const fetchOffers = async (page = 1) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/offers?page=${page}`, {
-                headers: {
-                    'X-Country': userCountry
-                }
-            });
+            const response = await axios.get(`/api/offers?page=${page}`);
             setOffers(response.data.data);
             setPagination({
                 current_page: response.data.current_page,
@@ -52,7 +44,7 @@ const OffersList = () => {
         <div className="space-y-6">
             {/* En-tête */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Offres d'affiliation</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Missions</h1>
                 <p className="mt-1 text-sm text-gray-600">
                     Découvrez les offres disponibles dans votre pays et commencez à gagner des commissions.
                 </p>

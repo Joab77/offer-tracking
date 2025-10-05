@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/country/reload', [AuthController::class, 'updateCountryFromIP']);
 
     // Routes utilisateur (nécessitent validation)
     Route::middleware('validated')->group(function () {

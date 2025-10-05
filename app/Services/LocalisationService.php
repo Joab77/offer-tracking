@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+
+class LocalisationService
+{
+    public function getCountryWithIP(string $ip): ?array
+    {
+        if($ip === '127.0.0.1' || $ip === 'localhost') {
+            $ip = "102.64.219.118";
+        }
+        // Utilisation d'un service tiers pour obtenir le pays à partir de l'IP
+        // Par exemple, ipapi.co, ipinfo.io, etc.
+        // Ici, nous utilisons ipapi.co comme exemple
+
+        $response = Http::post("https://ipinfo.io/{$ip}/json/");
+
+        if ($response === false) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+
+        return [
+            'country_code' => $data['country'] ?? "FR",
+            'city' => $data['city'] ?? "Paris",
+        ];
+    }
+}

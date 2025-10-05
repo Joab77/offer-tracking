@@ -14,55 +14,69 @@ export const useLocation = () => {
     });
 
     useEffect(() => {
-        if (!navigator.geolocation) {
-            setLocation(prev => ({
-                ...prev,
-                loading: false,
-                error: 'Géolocalisation non supportée',
-            }));
-            return;
-        }
+        // if (!navigator.geolocation) {
+        //     setLocation(prev => ({
+        //         ...prev,
+        //         loading: false,
+        //         error: 'Géolocalisation non supportée',
+        //     }));
+        //     return;
+        // }
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
+        // try {
+        //     const getInitialData = async () => {
+        //         const res = await fetch(`https://ipapi.co/json/`);
+        //         const data = await res.json();
+        //         setAddress(data);
+        //         console.log(data);
+        //     };
+        //     getInitialData();
+        // } catch (error) {
+        //     console.trace(error);
+        // }
 
-                try {
-                    console.log("latitude", latitude)
-                    console.log("longitude", longitude)
-                    const response = await axios.get(
-                        `api/location?lat=${latitude}&lng=${longitude}`
-                    );
+        
 
-                    const result = response.data.results[0]?.components;
+        // navigator.geolocation.getCurrentPosition(
+        //     async (position) => {
+        //         const { latitude, longitude } = position.coords;
 
-                    console.log("herer", response)
+        //         try {
+        //             console.log("latitude", latitude)
+        //             console.log("longitude", longitude)
+        //             const response = await axios.get(
+        //                 `api/location?lat=${latitude}&lng=${longitude}`
+        //             );
 
-                    setLocation({
-                        loading: false,
-                        error: null,
-                        latitude,
-                        longitude,
-                        code: result?.country_code?.toUpperCase() || null,
-                        country: result?.country || null,
-                        city: result?.city || result?.town || result?.village || null,
-                    });
-                } catch (err) {
-                    setLocation(prev => ({
-                        ...prev,
-                        loading: false,
-                        error: 'Impossible de récupérer le pays',
-                    }));
-                }
-            },
-            (err) => {
-                setLocation(prev => ({
-                    ...prev,
-                    loading: false,
-                    error: err.message,
-                }));
-            }
-        );
+        //             const result = response.data.results[0]?.components;
+
+        //             console.log("herer", response)
+
+        //             setLocation({
+        //                 loading: false,
+        //                 error: null,
+        //                 latitude,
+        //                 longitude,
+        //                 code: result?.country_code?.toUpperCase() || null,
+        //                 country: result?.country || null,
+        //                 city: result?.city || result?.town || result?.village || null,
+        //             });
+        //         } catch (err) {
+        //             setLocation(prev => ({
+        //                 ...prev,
+        //                 loading: false,
+        //                 error: 'Impossible de récupérer le pays',
+        //             }));
+        //         }
+        //     },
+        //     (err) => {
+        //         setLocation(prev => ({
+        //             ...prev,
+        //             loading: false,
+        //             error: err.message,
+        //         }));
+        //     }
+        // );
     }, []);
 
     return location;
