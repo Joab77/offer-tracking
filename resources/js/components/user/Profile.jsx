@@ -236,9 +236,11 @@ const Profile = () => {
 
             {/* Modal création/modification */}
             {showEditCountryModal && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
+                
+                           // Modal sans overlay gris — positionné au‑dessus du contenu existant
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 pointer-events-none">
+                    <div className="mx-4 w-full max-w-lg p-6 border shadow-lg rounded-lg bg-white pointer-events-auto">
+                         <div className="mt-1">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-medium text-gray-900">
                                     Actualiser mon pays
@@ -254,7 +256,8 @@ const Profile = () => {
                             </div>
                             <form onSubmit={handleSubmit(onCountryDataLoadSubmit)} className="space-y-4">
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    Actualiser mon pays
+                                    {/* champs pour sélectionner / actualiser le pays */}
+                                    Voulez-vous vraiment actualiser votre pays
                                 </div>
 
                                 <div className="flex justify-end space-x-3 pt-4">
@@ -263,7 +266,7 @@ const Profile = () => {
                                         onClick={closeModal}
                                         className="btn-secondary"
                                     >
-                                        Annuler
+                                        Non Annuler
                                     </button>
                                     <button
                                         type="submit"
@@ -273,7 +276,7 @@ const Profile = () => {
                                         {submitting ? (
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                         ) : (
-                                            <span>Actualiser</span>
+                                            <span>Oui Actualiser</span>
                                         )}
                                     </button>
                                 </div>
@@ -282,6 +285,7 @@ const Profile = () => {
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
