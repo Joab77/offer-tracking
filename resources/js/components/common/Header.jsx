@@ -7,7 +7,7 @@ import { useLocation as useLocationHook } from '../../hooks/useLocation.jsx';
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  useLocationHook(); // keep existing behaviour (scroll to hash etc.)
+  useLocationHook();
   const routeLocation = useRouteLocation();
 
   useEffect(() => {

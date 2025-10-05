@@ -11,19 +11,17 @@ class OfferController extends Controller
 {
     public function index(Request $request)
     {
-        // Récupérer le code pays depuis l'en-tête
-        $user = $request->user();
+        // Récupérer le pays depuis les headers de la requête (géolocalisation temps réel)
+        $userCountry = $request->header('X-Country');
 
-        // $userCountry = $request->header('X-Country');
-
-        if (!$user->country) {
+        if (!$userCountry) {
             return response()->json([
                 'message' => 'Localisation requise pour afficher les offres',
                 'error' => 'GEOLOCATION_REQUIRED'
             ], 400);
         }
 
-        $offers = Offer::where('country', strtoupper($user->country['country_code']))
+        $offers = Offer::where('country', strtoupper($userCountry))
             ->latest()
             ->paginate(20);
 
@@ -33,18 +31,11 @@ class OfferController extends Controller
     public function show(Request $request, $id)
     {
         $country = $request->header('X-Country');
-         $user = $request->user();
 
-        if (!$user->country) {
-            return response()->json([
-                'message' => 'Localisation requise pour afficher les offres',
-                'error' => 'GEOLOCATION_REQUIRED'
-            ], 400);
-        }
 
         $offer = Offer::query()
             ->where('id', $id)
-        ->when(strtoupper($user->country['country_code']), fn($q) => $q->where('country', strtoupper($user->country['country_code'])))
+            ->when($country, fn($q) => $q->where('country', $country))
             ->first();
 
         if (!$offer) {
@@ -63,10 +54,10 @@ class OfferController extends Controller
     public function apply(Request $request, Offer $offer)
     {
         $user = $request->user();
-        //$userCountry = $request->header('X-Country');
+        $userCountry = $request->header('X-Country');
 
         // Vérifier si l'offre est pour le bon pays
-        if ($offer->country !== strtoupper($user->country['country_code'])) {
+        if ($offer->country !== strtoupper($userCountry)) {
             return response()->json([
                 'message' => 'Cette offre n\'est pas disponible dans votre pays'
             ], 403);

@@ -10,6 +10,8 @@ import {
     LinkIcon,
     CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import {useLocation} from "@/hooks/useLocation.jsx";
+import {useAuth} from "@/contexts/AuthContext.jsx";
 
 const OfferDetail = () => {
     const { id } = useParams();
@@ -18,62 +20,48 @@ const OfferDetail = () => {
     const [loading, setLoading] = useState(true);
     const [applying, setApplying] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
-        // debug states pour afficher la réponse brute
-    const [lastResponse, setLastResponse] = useState(null);
-    const [lastStatus, setLastStatus] = useState(null);
+    const { code, loading: geoLoading } = useLocation();
+    const { user } = useAuth();
 
     useEffect(() => {
-        if (!id) {
-            console.warn('OfferDetail: id manquant dans l\'URL');
-            setLoading(false);
-            return;
+        if(!geoLoading && code) {
+            fetchOffer(code);
+            checkParticipation();
         }
 
-        // Charge l'offre sans header (backend gère le pays)
-        fetchOffer();
-        checkParticipation();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, geoLoading, code]);
 
-    const fetchOffer = async () => {
-        setLoading(true);
+    const fetchOffer = async (userCountry) => {
         try {
-            console.log("fetchOffer - id:", id);
-            const response = await axios.get(`/api/offers/${id}`);
-            console.log("fetchOffer response:", response);
-            // stocke la réponse brute pour debug
-            setLastStatus(response?.status);
-            setLastResponse(response?.data ?? null);
+            const response = await axios.get(`/api/offers/${id}`, {
+                headers: {
+                    'X-Country': userCountry
+                }
+            });
 
-            // Comme dans OffersList, preferer response.data.data puis fallback sur response.data
-        
-            const payload = response?.data?.data ?? response?.data ?? null;
+            console.log(response)
 
-
-            if (!payload) {
-                console.warn('fetchOffer: payload vide', response);
+            if (response.data.success) {
+                setOffer(response.data.data);
+            } else {
                 Alert.error('Offre non trouvée');
-                setOffer(null);
-                return;
+                navigate('/offers');
             }
-
-            // Si payload contient wrapper (adapter si nécessaire)
-            // Exemple OffersList stocke response.data.data pour chaque offre
-            // Ici on assume payload est l'objet offre ou contient directement les champs
-            setOffer(payload);
         } catch (error) {
-            console.error("Erreur lors du chargement de l'offre:", error);
-            Alert.error(error.response?.data?.message || "Erreur lors du chargement de l'offre");
-            setOffer(null);
+            console.error('Erreur lors du chargement de l\'offre:', error);
+            Alert.error('Erreur lors du chargement de l\'offre');
+            navigate('/offers');
         } finally {
             setLoading(false);
         }
     };
 
+
     const checkParticipation = async () => {
         try {
             const response = await axios.get('/api/participations');
-            const participation = response?.data?.data?.find(p => p.offer_id === parseInt(id, 10));
+            const participation = response.data.data.find(p => p.offer_id === parseInt(id));
+            console.log("participation", response)
             setHasApplied(!!participation);
         } catch (error) {
             console.error('Erreur lors de la vérification de la participation:', error);
@@ -81,20 +69,38 @@ const OfferDetail = () => {
     };
 
     const handleParticipate = async (isApply = true) => {
-        if (!offer) return;
+        if (!isApply) window.open(offer.deeplink, "_blank");
         try {
             setApplying(true);
-            const response = await axios.post(`/api/offers/${id}/apply`, {});
+            const response = await axios.post(
+                `/api/offers/${id}/apply`,
+                {}, // corps vide
+                {
+                    headers: {
+                        'X-Country': code
+                    }
+                }
+            );
 
-            if (response.data?.action === 'continue') {
+            if (response.data.action === 'continue') {
+                // L'utilisateur a déjà participé
                 Alert.info('Redirection vers votre mission...');
             } else {
+                // Nouvelle participation
                 Alert.success('Participation enregistrée avec succès !');
                 setHasApplied(true);
             }
+            
+            if (response.data.deeplink) {
+                const deeplink = response.data.deeplink;
+                const url = new URL(deeplink);
 
-            const deeplink = response.data?.deeplink || offer.deeplink;
-            if (deeplink) window.open(deeplink, '_blank');
+                // Remplace ou ajoute le param ws
+                url.searchParams.set('ws', String(user.id));
+
+                console.log(url)
+                window.open(url, '_blank');
+            }
         } catch (error) {
             const message = error.response?.data?.message || 'Erreur lors de la participation';
             Alert.error(message);
@@ -114,6 +120,9 @@ const OfferDetail = () => {
         }
     };
 
+    const getStatusText = (status) => {
+        return status;
+    };
     if (loading) {
         return <LoadingSpinner />;
     }
@@ -131,6 +140,7 @@ const OfferDetail = () => {
 
     return (
         <div className="space-y-6">
+            {/* Navigation */}
             <div>
                 <button
                     onClick={() => navigate('/offers')}
@@ -141,8 +151,10 @@ const OfferDetail = () => {
                 </button>
             </div>
 
+            {/* Détail de l'offre */}
             <div className="card">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Image */}
                     {offer.image_url && (
                         <div className="aspect-w-16 aspect-h-9">
                             <img
@@ -153,6 +165,7 @@ const OfferDetail = () => {
                         </div>
                     )}
 
+                    {/* Contenu */}
                     <div className={offer.image_url ? '' : 'lg:col-span-2'}>
                         <div className="flex items-start space-x-3 mb-4">
                             <div className="flex-shrink-0">
@@ -169,20 +182,22 @@ const OfferDetail = () => {
                                     {offer.status &&
                                         <span
                                             className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(offer.status)}`}>
-                                            {offer.status}
+                                        {getStatusText(offer.status)}
                                         </span>
                                     }
+
                                 </div>
                             </div>
                         </div>
 
                         <div className="prose prose-sm max-w-none mb-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-3">Description</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3">Description</h3>
                             <p className="text-gray-600 leading-relaxed">
                                 {offer.description}
                             </p>
                         </div>
 
+                        {/* Actions */}
                         <div className="space-y-4">
                             {hasApplied ? (
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -218,7 +233,7 @@ const OfferDetail = () => {
                                 </div>
                             ) : (
                                 <button
-                                    onClick={() => handleParticipate(true)}
+                                    onClick={handleParticipate}
                                     disabled={applying}
                                     className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >

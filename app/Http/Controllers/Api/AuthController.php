@@ -7,6 +7,7 @@ use App\Notifications\WelcomeNotification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -29,15 +30,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $localisation = new \App\Services\LocalisationService();
-        $country = $localisation->getCountryWithIP($request->ip());
-
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'country' => $country,
+            'password' => Hash::make($request->password)
         ]);
 
         $user->notify(new WelcomeNotification());
@@ -195,7 +192,7 @@ class AuthController extends Controller
 
         $localisation = new \App\Services\LocalisationService();
         $country = $localisation->getCountryWithIP($request->ip());
-        
+
 
         if ($country) {
             $user->country = $country;
@@ -212,6 +209,31 @@ class AuthController extends Controller
                 'message' => 'Impossible de déterminer le pays',
             ], 500);
         }
+    }
+
+    public function getLocation(Request $request){
+        $ip = $request->ip();
+
+        if ($ip === "127.0.0.1" || $ip === "::1" || $ip === 'localhost') {
+            $ip = Http::get("https://api.ipify.org")->body();
+        }
+
+        $response = Http::get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode,regionName,city,lat,lon");
+
+        if ($response->successful() && $response['status'] === 'success') {
+            return response()->json([
+                'location' => [
+                    'country' => $response['country'],
+                    'country_code' => $response['countryCode'],
+                    'region'  => $response['regionName'],
+                    'city'    => $response['city'],
+                    'lat'     => $response['lat'],
+                    'lng'     => $response['lon'],
+                ]
+            ]);
+        }
+
+        return response()->json(['error' => 'Impossible de déterminer la localisation'], 400);
     }
 
 

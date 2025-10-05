@@ -10,7 +10,7 @@ class ParticipationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $participations = $user->participations()
             ->whereNotNull('status') // Exclure les participations avec un status null
             ->with('offer')

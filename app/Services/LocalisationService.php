@@ -9,7 +9,7 @@ class LocalisationService
     public function getCountryWithIP(string $ip): ?array
     {
         if($ip === '127.0.0.1' || $ip === 'localhost') {
-            $ip = "102.64.219.118";
+            $ip = Http::get("https://api.ipify.org")->body();
         }
         // Utilisation d'un service tiers pour obtenir le pays à partir de l'IP
         // Par exemple, ipapi.co, ipinfo.io, etc.

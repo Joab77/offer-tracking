@@ -166,7 +166,6 @@ class DaisyconService
         $programId = $transaction['program_id'] ?? null;
 
         if (!$affiliatemarketingId || !$programId) {
-            dd("2");
             Log::warning('Transaction incomplète', ['transaction' => $transaction]);
             return false;
         }

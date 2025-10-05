@@ -29,20 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    Route::get('/location', function (\Illuminate\Http\Request $request) {
-        $lat = $request->query('lat');
-        $lng = $request->query('lng');
-        $apiKey = env('OPENCAGE_API_KEY');
-
-        $response = Http::get('https://api.opencagedata.com/geocode/v1/json', [
-            'key' => $apiKey,
-            'q' => $lat . ',' . $lng,
-            'pretty' => 1,
-            'no_annotations' => 1,
-        ]);
-
-        return $response->json();
-    });
+    Route::get('/location', [AuthController::class, 'getLocation']);
 
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/country/reload', [AuthController::class, 'updateCountryFromIP']);
