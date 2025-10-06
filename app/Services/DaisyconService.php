@@ -110,7 +110,7 @@ class DaisyconService
                 [
                     'page' => $page,
                     'limit' => $limit,
-                    'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
+                    'start' => now()->startOfDay()->format('Y-m-d H:i:s'),
                     'end'   => now()->endOfDay()->format('Y-m-d H:i:s'),
                 ]
             );
@@ -218,7 +218,7 @@ class DaisyconService
             ]);
         } else {
 
-            Participation::create(array_merge(
+            Participation::updateOrCreate(['offer_id' => $offer->id, 'user_id' => $participationData['user_id']],array_merge(
                 ['offer_id' => $offer->id],
                 $participationData
             ));
