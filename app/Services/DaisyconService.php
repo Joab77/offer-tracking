@@ -110,8 +110,8 @@ class DaisyconService
                 [
                     'page' => $page,
                     'limit' => $limit,
-                    'start' => now()->startOfYear()->format('Y-m-d H:i:s'),
-                    'end'   => now()->format('Y-m-d H:i:s'),
+                    'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
+                    'end'   => now()->endOfDay()->format('Y-m-d H:i:s'),
                 ]
             );
 
