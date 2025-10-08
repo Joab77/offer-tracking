@@ -98,21 +98,31 @@ class DaisyconService
         }
     }
 
-    public function getTransactions(int $page = 1, int $limit = 100): array
+    public function getTransactions(int $page = 1, int $limit = 1000): array
     {
         try {
             if (!$this->accessToken && !$this->authenticate()) {
                 return [];
             }
 
+            $lastSync = Setting::get('daisycon_last_sync');
+
+            $params = [
+                'page' => $page,
+                'limit' => $limit,
+                'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
+                'end'   => now()->endOfMonth()->format('Y-m-d H:i:s'),
+                'order_by' => 'date',
+                'order_direction' => 'desc',
+            ];
+
+            if ($lastSync) {
+                $params['date_modified_start'] = \Carbon\Carbon::parse($lastSync)->format('Y-m-d H:i:s');
+            }
+
             $response = Http::withToken($this->accessToken)->get(
                 self::BASE_URL . "/publishers/{$this->publisherId}/transactions",
-                [
-                    'page' => $page,
-                    'limit' => $limit,
-                    'start' => now()->startOfDay()->format('Y-m-d H:i:s'),
-                    'end'   => now()->endOfDay()->format('Y-m-d H:i:s'),
-                ]
+                $params
             );
 
 
@@ -189,45 +199,57 @@ class DaisyconService
     {
         $transactionId = $transaction['affiliatemarketing_id'] . '_' . $part['id'];
 
-
-        // Chercher une participation existante
         $participation = Participation::findByTransactionId($transactionId);
 
         $participationData = [
             'transaction_id' => $transactionId,
-            'status' => $this->mapDaisyconStatus($part['status'] ?? 'pending'),
+            'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
             'commission' => $part['commission'] ?? null,
             'currency_code' => $part['currency_code'] ?? null,
             'raw_data' => [
                 'transaction' => $transaction,
-                'part' => $part
-            ]
+                'part' => $part,
+            ],
+            'offer_id' => $offer->id,
         ];
 
-        $userId = $part['subid'] ?? null;
-        if ($userId) {
-            $participationData['user_id'] = $userId;
+        if (!empty($part['subid'])) {
+            $participationData['user_id'] = $part['subid'];
         }
 
         if ($participation) {
-            // Mettre à jour la participation existante
             $participation->update($participationData);
+
             Log::info('Participation mise à jour', [
                 'participation_id' => $participation->id,
-                'transaction_id' => $transactionId
-            ]);
-        } else {
-
-            Participation::updateOrCreate(['offer_id' => $offer->id, 'user_id' => $participationData['user_id']],array_merge(
-                ['offer_id' => $offer->id],
-                $participationData
-            ));
-
-            Log::info('Nouvelle transaction Daisycon sans participation locale', [
                 'transaction_id' => $transactionId,
-                'offer_id' => $offer->id
             ]);
+            return;
         }
+
+        if (isset($participationData['user_id'])) {
+            $record = Participation::updateOrCreate(
+                ['offer_id' => $offer->id, 'user_id' => $participationData['user_id']],
+                $participationData
+            );
+
+            Log::info('Nouvelle participation Daisycon créée', [
+                'participation_id' => $record->id,
+                'transaction_id' => $transactionId,
+                'offer_id' => $offer->id,
+                'has_user' => true,
+            ]);
+            return;
+        }
+
+        $record = Participation::create($participationData);
+
+        Log::info('Nouvelle participation Daisycon créée', [
+            'participation_id' => $record->id,
+            'transaction_id' => $transactionId,
+            'offer_id' => $offer->id,
+            'has_user' => false,
+        ]);
     }
 
     private function findOfferByProgramId(int $programId): ?Offer
@@ -241,8 +263,7 @@ class DaisyconService
         return match (strtolower($daisyconStatus)) {
             'approved' => 'approved',
             'disapproved' => 'disapproved',
-            'pending' => 'pending',
-            default => 'pending',
+            'open' => 'open'
         };
     }
 
