@@ -48,7 +48,7 @@ const Header = () => {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${scrolled ? 'bg-indigo-600' : 'bg-white'}`}>
                 <span className={`font-bold ${scrolled ? 'text-white' : 'text-indigo-600'}`}>G</span>
               </div>
-              <span className={`text-xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>GainExpress</span>
+              <span className={`text-xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>GainsExpress</span>
             </Link>
           </div>
 

@@ -36,9 +36,9 @@ const AdminDashboard = () => {
                 pendingUsers: users.filter(u => !u.validated).length,
                 totalOffers: offers.length,
                 totalParticipations: participations.length,
-                validatedParticipations: participations.filter(p => p.status === 'validee').length,
-                pendingParticipations: participations.filter(p => p.status === 'en_attente').length,
-                rejectedParticipations: participations.filter(p => p.status === 'refusee').length,
+                validatedParticipations: participations.filter(p => p.status === 'approved').length,
+                pendingParticipations: participations.filter(p => p.status === 'opened').length,
+                rejectedParticipations: participations.filter(p => p.status === 'disapproved').length,
             });
         } catch (error) {
             console.error('Erreur lors du chargement des statistiques:', error);
