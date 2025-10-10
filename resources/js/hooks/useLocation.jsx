@@ -24,8 +24,6 @@ export const useLocation = () => {
 
                 const result = response.data.location;
 
-                console.log("herer", result)
-
                 setLocation({
                     loading: false,
                     error: null,

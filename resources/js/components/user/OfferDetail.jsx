@@ -39,7 +39,6 @@ const OfferDetail = () => {
                 }
             });
 
-            console.log(response)
 
             if (response.data.success) {
                 setOffer(response.data.data);
@@ -61,10 +60,9 @@ const OfferDetail = () => {
         try {
             const response = await axios.get('/api/participations');
             const participation = response.data.data.find(p => p.offer_id === parseInt(id));
-            console.log("participation", response)
+
             setHasApplied(!!participation);
         } catch (error) {
-            console.error('Erreur lors de la vérification de la participation:', error);
         }
     };
 
@@ -90,7 +88,7 @@ const OfferDetail = () => {
                 Alert.success('Participation enregistrée avec succès !');
                 setHasApplied(true);
             }
-            
+
             if (response.data.deeplink) {
                 const deeplink = response.data.deeplink;
                 const url = new URL(deeplink);
@@ -98,7 +96,6 @@ const OfferDetail = () => {
                 // Remplace ou ajoute le param ws
                 url.searchParams.set('ws', String(user.id));
 
-                console.log(url)
                 window.open(url, '_blank');
             }
         } catch (error) {
@@ -151,22 +148,10 @@ const OfferDetail = () => {
                 </button>
             </div>
 
-            {/* Détail de l'offre */}
             <div className="card">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Image */}
-                    {offer.image_url && (
-                        <div className="aspect-w-16 aspect-h-9">
-                            <img
-                                src={offer.image_url}
-                                alt={offer.title}
-                                className="w-full h-64 lg:h-full object-cover rounded-lg"
-                            />
-                        </div>
-                    )}
 
-                    {/* Contenu */}
-                    <div className={offer.image_url ? '' : 'lg:col-span-2'}>
+                    <div className="lg:col-span-2">
                         <div className="flex items-start space-x-3 mb-4">
                             <div className="flex-shrink-0">
                                 <TagIcon className="h-8 w-8 text-primary-600" />
@@ -174,27 +159,16 @@ const OfferDetail = () => {
                             <div className="flex-1">
                                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
                                     {offer.title}
-                                </h1>
-                                <div className="flex items-center space-x-4 mb-4">
-                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                    <span
+                                        className="inline-flex items-center ml-3 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                                         {offer.country}
                                     </span>
-                                    {offer.status &&
-                                        <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(offer.status)}`}>
-                                        {getStatusText(offer.status)}
-                                        </span>
-                                    }
-
-                                </div>
+                                    <span
+                                        className="inline-flex items-center ml-3 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                        1€
+                                    </span>
+                                </h1>
                             </div>
-                        </div>
-
-                        <div className="prose prose-sm max-w-none mb-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">Description</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                {offer.description}
-                            </p>
                         </div>
 
                         {/* Actions */}

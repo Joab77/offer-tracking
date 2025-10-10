@@ -63,15 +63,6 @@ const OffersList = () => {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {offers.map((offer) => (
                         <div key={offer.id} className="card hover:shadow-md transition-shadow duration-200">
-                            {offer.image_url && (
-                                <div className="aspect-w-16 aspect-h-9 mb-4">
-                                    <img
-                                        src={offer.image_url}
-                                        alt={offer.title}
-                                        className="w-full h-48 object-cover rounded-lg"
-                                    />
-                                </div>
-                            )}
                             <div className="flex items-start space-x-3">
                                 <div className="flex-shrink-0">
                                     <TagIcon className="h-6 w-6 text-primary-600" />
@@ -80,14 +71,11 @@ const OffersList = () => {
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                                         {offer.title}
                                     </h3>
-                                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                                        {offer.description}
-                                    </p>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-1 text-green-600">
                                             <CurrencyEuroIcon className="h-4 w-4" />
                                             <span className="text-sm font-medium">
-                                                {offer.commission}€ de commission
+                                                1€ de commission
                                             </span>
                                         </div>
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">

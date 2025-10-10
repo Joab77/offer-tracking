@@ -19,4 +19,27 @@ class ParticipationController extends Controller
 
         return response()->json($participations);
     }
+
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+
+        $sold = $user->participations()
+            ->where('status', 'approved')
+            ->count();
+        $opened = $user->participations()
+            ->where('status', 'opened')
+            ->count();
+        $disapproved = $user->participations()
+            ->where('status', 'disapproved')
+            ->count();
+
+        return response()->json([
+            "sold" => $sold,
+            "total" => $sold + $opened + $disapproved,
+            "approved" => $sold,
+            "opened" => $opened,
+            "disapproved" => $disapproved
+        ]);
+    }
 }

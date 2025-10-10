@@ -17,7 +17,7 @@ import {
 
 const schema = yup.object({
     title: yup.string().required('Titre requis').min(3, 'Le titre doit contenir au moins 3 caractères'),
-    description: yup.string().required('Description requise').min(10, 'La description doit contenir au moins 10 caractères'),
+    description: yup.string().nullable('Description requise').min(10, 'La description doit contenir au moins 10 caractères'),
     image_url: yup.string().url('URL invalide').nullable(),
     country: yup.string().required('Pays requis'),
     deeplink: yup.string().required('URL Daisycon requise').url('URL invalide'),
@@ -107,7 +107,6 @@ const OfferManagement = () => {
     };
 
     const onSubmit = async (data) => {
-        console.log("sss")
         try {
             setSubmitting(true);
 
@@ -261,21 +260,9 @@ const OfferManagement = () => {
                                 <tr key={offer.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            {offer.image_url && (
-                                                <div className="flex-shrink-0 h-10 w-10">
-                                                    <img
-                                                        className="h-10 w-10 rounded-lg object-cover"
-                                                        src={offer.image_url}
-                                                        alt={offer.title}
-                                                    />
-                                                </div>
-                                            )}
                                             <div className={offer.image_url ? 'ml-4' : ''}>
                                                 <div className="text-sm font-medium text-gray-900">
                                                     {offer.title}
-                                                </div>
-                                                <div className="text-sm text-gray-500 max-w-xs truncate">
-                                                    {offer.description}
                                                 </div>
                                             </div>
                                         </div>
@@ -460,22 +447,6 @@ const OfferManagement = () => {
                                         )}
                                     </div>
 
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Description
-                                        </label>
-                                        <textarea
-                                            {...register('description')}
-                                            rows={3}
-                                            className="input-field mt-1"
-                                            placeholder="Description de l'offre"
-                                        />
-                                        {errors.description && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-                                        )}
-                                    </div>
-
-
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">
                                             Pays
@@ -498,21 +469,6 @@ const OfferManagement = () => {
 
                                     <div className="sm:col-span-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            URL de l'image (optionnel)
-                                        </label>
-                                        <input
-                                            {...register('image_url')}
-                                            type="url"
-                                            className="input-field mt-1"
-                                            placeholder="https://example.com/image.jpg"
-                                        />
-                                        {errors.image_url && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.image_url.message}</p>
-                                        )}
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700">
                                             URL Daisycon
                                         </label>
                                         <input
@@ -526,20 +482,6 @@ const OfferManagement = () => {
                                         )}
                                     </div>
 
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Clé API Daisycon (optionnel)
-                                        </label>
-                                        <input
-                                            {...register('api_key')}
-                                            type="text"
-                                            className="input-field mt-1"
-                                            placeholder="Clé API pour le suivi des conversions"
-                                        />
-                                        {errors.api_key && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.api_key.message}</p>
-                                        )}
-                                    </div>
                                 </div>
 
                                 <div className="flex justify-end space-x-3 pt-4">
@@ -587,22 +529,9 @@ const OfferManagement = () => {
                                 </button>
                             </div>
                             <div className="space-y-4">
-                                {selectedOffer.image_url && (
-                                    <div>
-                                        <img
-                                            src={selectedOffer.image_url}
-                                            alt={selectedOffer.title}
-                                            className="w-full h-48 object-cover rounded-lg"
-                                        />
-                                    </div>
-                                )}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Titre</label>
                                     <p className="mt-1 text-sm text-gray-900">{selectedOffer.title}</p>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                                    <p className="mt-1 text-sm text-gray-900">{selectedOffer.description}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>

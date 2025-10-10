@@ -36,7 +36,6 @@ const Login = () => {
             if (result.success) {
                 navigate('/dashboard');
             } else {
-                console.log("message", result)
                 // si login() renvoie un message d’erreur
                 setServerError(result.message || result.error || 'Échec de connexion. Vérifiez vos identifiants.');
             }

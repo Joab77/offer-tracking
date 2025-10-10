@@ -27,7 +27,7 @@ class OfferController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'image_url' => 'nullable|url',
             'country' => 'required|string|size:2',
             'deeplink' => 'required|url',
@@ -51,7 +51,7 @@ class OfferController extends Controller
 
         $offer = Offer::create([
             'title' => $request->title,
-            'description' => $request->description,
+            'description' => $request->description ?? 'Description',
             'image_url' => $request->image_url,
             'country' => strtoupper($request->country),
             'deeplink' => $request->deeplink,
@@ -68,7 +68,7 @@ class OfferController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'image_url' => 'nullable|url',
             'country' => 'required|string|size:2',
             'deeplink' => 'required|url',
@@ -90,7 +90,7 @@ class OfferController extends Controller
 
         $offer->update([
             'title' => $request->title,
-            'description' => $request->description,
+            'description' => $request->description ?? 'Description',
             'image_url' => $request->image_url,
             'country' => strtoupper($request->country),
             'deeplink' => $request->deeplink,

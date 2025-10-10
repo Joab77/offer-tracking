@@ -14,9 +14,12 @@ const ParticipationsList = () => {
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState('all');
+    const [balance, setBalance] = useState(0);
+    const [stats, setStats] = useState({ all: 0, opened: 0, approved: 0, disapproved: 0 });
 
     useEffect(() => {
         fetchParticipations(currentPage);
+        getSold()
     }, [currentPage, filter]);
 
     const fetchParticipations = async (page = 1) => {
@@ -27,11 +30,9 @@ const ParticipationsList = () => {
             const response = await axios.get(url);
             let filteredParticipations = response.data.data;
 
-            // Filtrer côté client selon le statut de l'offre
             if (filter !== 'all') {
                 filteredParticipations = response.data.data.filter(p => p?.status === filter);
             }
-            console.log("filter", filter)
 
             setParticipations(filteredParticipations);
             setPagination({
@@ -46,6 +47,18 @@ const ParticipationsList = () => {
             setLoading(false);
         }
     };
+
+    const getSold = async () => {
+        try {
+            const response = await axios.get(`/api/get/user/sold`);
+            let sold = response.data.sold;
+            setStats(() => ({ all: response.data.total, opened: response.data.opened, approved: response.data.approved, disapproved: response.data.disapproved }))
+            setBalance(sold)
+        } catch (error) {
+            console.error('Erreur lors du chargement des participations:', error);
+        } finally {
+        }
+    }
 
     const getOfferStatusIcon = (status) => {
         switch (status) {
@@ -100,11 +113,20 @@ const ParticipationsList = () => {
     return (
         <div className="space-y-6">
             {/* En-tête */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mes participations</h1>
-                <p className="mt-1 text-sm text-gray-600">
-                    Suivez le statut des offres auxquelles vous participez.
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Mes participations</h1>
+                    <p className="mt-1 text-sm text-gray-600">
+                        Suivez le statut des offres auxquelles vous participez.
+                    </p>
+                </div>
+
+                <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                    <CurrencyEuroIcon className="h-6 w-6 text-green-600" />
+                    <span className="text-lg font-semibold text-green-700">
+                        Solde : {balance} €
+                    </span>
+                </div>
             </div>
 
             {/* Filtres */}
@@ -124,7 +146,7 @@ const ParticipationsList = () => {
                                 : 'text-gray-600 hover:text-gray-900'
                         }`}
                     >
-                        {filterOption.label}
+                        {filterOption.label}({ stats[filterOption.key] })
                     </button>
                 ))}
             </div>
@@ -141,27 +163,24 @@ const ParticipationsList = () => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                                {participation.offer?.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                                                {participation.offer?.description}
-                                            </p>
-                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                <span>
-                                                    {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
+                                            <span>
+                                                {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
                                                     hour: '2-digit',
                                                     minute: '2-digit'
                                                 })}
-                                                </span>
+                                            </span>
+                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                                {participation.offer?.title}
+                                            </h3>
+                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
                                                 {participation?.commission && (
                                                     <div className="flex items-center space-x-1 text-green-600">
-                                                        <CurrencyEuroIcon className="h-4 w-4" />
+                                                        <CurrencyEuroIcon className="h-4 w-4"/>
                                                         <span className="font-medium">
-                                                            {participation.commission} €
+                                                            1€
                                                         </span>
                                                     </div>
                                                 )}
@@ -284,8 +303,7 @@ const ParticipationsList = () => {
                 <div className="flex justify-center py-4">
                     <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-            )}
-        </div>
+            )}        </div>
     );
 };
 

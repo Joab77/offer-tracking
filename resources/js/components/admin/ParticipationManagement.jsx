@@ -312,7 +312,7 @@ const ParticipationManagement = () => {
                                         <div className="flex items-center space-x-1 text-green-600">
                                             <CurrencyEuroIcon className="h-4 w-4" />
                                             <span className="text-sm font-medium">
-                                                    {participation?.commission}€
+                                                    1€
                                                 </span>
                                         </div>
                                     </td>

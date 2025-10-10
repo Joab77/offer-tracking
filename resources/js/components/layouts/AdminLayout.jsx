@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -9,10 +9,15 @@ import {
     ArrowRightOnRectangleIcon,
     CogIcon,
 } from '@heroicons/react/24/outline';
+import axios from "axios";
 
 const AdminLayout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
+
+    useEffect(() => {
+        syncNow()
+    }, []);
 
     const navigation = [
         { name: 'Dashboard', href: '/admin', icon: HomeIcon },
@@ -21,6 +26,15 @@ const AdminLayout = () => {
         { name: 'Participations', href: '/admin/participations', icon: ClipboardDocumentListIcon },
         { name: 'Configuration Daisycon', href: '/admin/daisycon', icon: CogIcon },
     ];
+
+    const syncNow = async () => {
+        try {
+            await axios.post('/api/admin/daisycon/sync');
+        } catch (error) {
+
+        } finally {
+        }
+    };
 
     const isActive = (href) => location.pathname === href;
 

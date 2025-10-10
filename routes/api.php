@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/offers/{id}', [OfferController::class, 'show']);
         Route::post('/offers/{offer}/apply', [OfferController::class, 'apply']);
         Route::get('/participations', [ParticipationController::class, 'index']);
+        Route::get('/get/user/sold', [ParticipationController::class, 'stats']);
     });
 
     // Routes administrateur

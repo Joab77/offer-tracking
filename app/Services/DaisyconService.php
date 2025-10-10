@@ -188,7 +188,8 @@ class DaisyconService
         }
 
         // Traiter chaque part de la transaction
-        foreach ($transaction['parts'] as $part) {
+        foreach ($transaction['parts'] as &$part) {
+            $part['commission'] = "1";
             $this->processTransactionPart($offer, $transaction, $part);
         }
 
@@ -204,8 +205,8 @@ class DaisyconService
         $participationData = [
             'transaction_id' => $transactionId,
             'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
-            'commission' => $part['commission'] ?? null,
-            'currency_code' => $part['currency_code'] ?? null,
+            'commission' => "1",
+            'currency_code' => "€",
             'raw_data' => [
                 'transaction' => $transaction,
                 'part' => $part,
