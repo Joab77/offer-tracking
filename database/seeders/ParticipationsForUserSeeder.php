@@ -48,7 +48,7 @@ class ParticipationsForUserSeeder extends Seeder
         // Refresh collection and limit to target
         $offers = Offer::take($targetParticipations)->get()->values();
 
-        $statuses = ['pending', 'approved', 'disapproved', 'pending', 'approved', 'approved', 'pending'];
+        $statuses = ['open', 'approved', 'disapproved', 'open', 'approved', 'approved', 'open'];
 
         // Count existing participations for this user and create until target reached
         $existingCount = Participation::where('user_id', $user->id)->count();
@@ -75,7 +75,7 @@ class ParticipationsForUserSeeder extends Seeder
                 'user_id' => $user->id,
                 'offer_id' => $offer->id,
                 'transaction_id' => 'TX-' . uniqid(),
-                'status' => $statuses[$index % count($statuses)] ?? 'pending',
+                'status' => $statuses[$index % count($statuses)] ?? 'open',
                 'commission' => rand(100, 500) / 10, // random commission 10.0 - 50.0
                 'currency_code' => 'EUR',
                 'raw_data' => [
