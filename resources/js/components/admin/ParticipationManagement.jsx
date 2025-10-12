@@ -268,6 +268,9 @@ const ParticipationManagement = () => {
                                     Statut
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Lien
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Date
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -281,7 +284,8 @@ const ParticipationManagement = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="flex-shrink-0 h-8 w-8">
-                                                <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+                                                <div
+                                                    className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
                                                         <span className="text-xs font-medium text-primary-700">
                                                             {participation.user?.name?.charAt(0).toUpperCase()}
                                                         </span>
@@ -295,7 +299,7 @@ const ParticipationManagement = () => {
                                                     {participation.user?.email}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    { getIp(participation.raw_data) }
+                                                    {getIp(participation.raw_data)}
                                                 </div>
                                             </div>
                                         </div>
@@ -310,7 +314,7 @@ const ParticipationManagement = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center space-x-1 text-green-600">
-                                            <CurrencyEuroIcon className="h-4 w-4" />
+                                            <CurrencyEuroIcon className="h-4 w-4"/>
                                             <span className="text-sm font-medium">
                                                     1€
                                                 </span>
@@ -319,11 +323,21 @@ const ParticipationManagement = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center space-x-2">
                                             {getStatusIcon(participation.status)}
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(participation.status)}`}>
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(participation.status)}`}>
                                                     {getStatusText(participation.status)}
                                                 </span>
                                         </div>
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            className="block max-w-[8ch] truncate cursor-pointer"
+                                            title={participation.deeplink}
+                                        >
+                                            {participation.deeplink || '-----'}
+                                        </span>
+                                    </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
                                             year: 'numeric',
@@ -339,7 +353,7 @@ const ParticipationManagement = () => {
                                             className="text-primary-600 hover:text-primary-900 p-1"
                                             title="Voir les détails"
                                         >
-                                            <EyeIcon className="h-4 w-4" />
+                                            <EyeIcon className="h-4 w-4"/>
                                         </button>
                                     </td>
                                 </tr>
@@ -349,7 +363,7 @@ const ParticipationManagement = () => {
                     </div>
                 ) : (
                     <div className="text-center py-12">
-                        <ClipboardDocumentListIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <ClipboardDocumentListIcon className="mx-auto h-12 w-12 text-gray-400"/>
                         <h3 className="mt-2 text-sm font-medium text-gray-900">
                             {statusFilter === 'all' ? 'Aucune participation' : `Aucune participation ${statusFilter === 'en_attente' ? 'en attente' : statusFilter === 'validee' ? 'validée' : 'refusée'}`}
                         </h3>
@@ -560,6 +574,10 @@ const ParticipationManagement = () => {
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500">ID Participation</label>
                                             <p className="mt-1 text-sm text-gray-900 font-mono">#{selectedParticipation.id}</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500">Lien de tracking</label>
+                                            <p className="mt-1 text-sm text-gray-900 font-mono">#{selectedParticipation.deeplink}</p>
                                         </div>
                                     </div>
                                 </div>

@@ -18,7 +18,7 @@ class AccountValidatedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Votre compte a été validé !')
+            ->subject('Votre compte a été activé !')
             ->greeting('Félicitations ' . $notifiable->name . ' !')
             ->line('Votre compte a été validé par notre équipe.')
             ->line('Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme.')

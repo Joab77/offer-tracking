@@ -9,6 +9,7 @@ import {
     MagnifyingGlassIcon,
     FunnelIcon,
     EyeIcon,
+    TrashIcon
 } from '@heroicons/react/24/outline';
 
 const UserManagement = () => {
@@ -68,6 +69,42 @@ const UserManagement = () => {
             setValidating(null);
         }
     };
+
+    const handleDesactivateUser = async (userId) => {
+        try {
+            setValidating(userId);
+            await axios.patch(`/api/admin/users/${userId}/deactivate`);
+            Alert.success('Utilisateur desactiver avec succès !');
+            fetchUsers(currentPage);
+        } catch (error) {
+            const message = error.response?.data?.message || 'Erreur lors de la validation';
+            Alert.error(message);
+        } finally {
+            setValidating(null);
+        }
+    };
+
+    const deleteUser = async (userId) => {
+        try {
+            // Demande de confirmation via SweetAlert
+            const result = await Alert.confirm(
+                "Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible."
+            );
+
+            if (!result.isConfirmed) return; // L'utilisateur a annulé
+
+            setValidating(userId);
+            await axios.patch(`/api/admin/users/${userId}/destroy`);
+            Alert.success('Utilisateur supprimé avec succès !');
+            fetchUsers(currentPage);
+        } catch (error) {
+            const message = error.response?.data?.message || 'Erreur lors de la suppression';
+            Alert.error(message);
+        } finally {
+            setValidating(null);
+        }
+    };
+
 
     const handleSearchChange = (e) => {
         setSearch(e.target.value);
@@ -267,7 +304,7 @@ const UserManagement = () => {
                                                       ? 'bg-green-100 text-green-800'
                                                       : 'bg-yellow-100 text-yellow-800'
                                               }`}>
-                                                  {user.validated ? 'Validé' : 'En attente'}
+                                                  {user.validated ? 'Activé' : 'Désactivé'}
                                               </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -280,7 +317,7 @@ const UserManagement = () => {
                                                 className="text-primary-600 hover:text-primary-900 p-1"
                                                 title="Voir les détails"
                                             >
-                                                <EyeIcon className="h-4 w-4" />
+                                                <EyeIcon className="h-4 w-4"/>
                                             </button>
                                             {!user.validated && (
                                                 <button
@@ -289,12 +326,34 @@ const UserManagement = () => {
                                                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {validating === user.id ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                        <div
+                                                            className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                     ) : (
-                                                        'Valider'
+                                                        'Activé'
                                                     )}
                                                 </button>
                                             )}
+                                            {user.validated && (
+                                                <button
+                                                    onClick={() => handleDesactivateUser(user.id)}
+                                                    disabled={validating === user.id}
+                                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {validating === user.id ? (
+                                                        <div
+                                                            className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    ) : (
+                                                        'Desactivé'
+                                                    )}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => deleteUser(user.id)}
+                                                className="text-red-600 hover:text-red-900 p-1"
+                                                title="Supprimer l'utilisateur"
+                                            >
+                                                <TrashIcon className="h-4 w-4"/>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -304,7 +363,7 @@ const UserManagement = () => {
                     </div>
                 ) : (
                     <div className="text-center py-12">
-                        <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <UsersIcon className="mx-auto h-12 w-12 text-gray-400"/>
                         <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun utilisateur</h3>
                         <p className="mt-1 text-sm text-gray-500">
                             Aucun utilisateur ne correspond à vos critères de recherche.

@@ -11,7 +11,6 @@ class OfferController extends Controller
 {
     public function index(Request $request)
     {
-        // Récupérer le pays depuis les headers de la requête (géolocalisation temps réel)
         $userCountry = $request->header('X-Country');
 
         if (!$userCountry) {
@@ -56,14 +55,12 @@ class OfferController extends Controller
         $user = $request->user();
         $userCountry = $request->header('X-Country');
 
-        // Vérifier si l'offre est pour le bon pays
         if ($offer->country !== strtoupper($userCountry)) {
             return response()->json([
                 'message' => 'Cette offre n\'est pas disponible dans votre pays'
             ], 403);
         }
 
-        // Vérifier si l'utilisateur a déjà participé
         if ($offer->hasUserParticipated($user->id)) {
             return response()->json([
                 'message' => 'Vous avez déjà participé à cette offre',
@@ -72,13 +69,14 @@ class OfferController extends Controller
             ], 200);
         }
 
-        // Créer la participation
         $participation = Participation::create([
             'user_id' => $user->id,
             'offer_id' => $offer->id,
+            'deeplink' => $request->deeplink
         ]);
+
         return response()->json([
-        'message' => 'Participation enregistrée avec succès',
+            'message' => 'Participation enregistrée avec succès',
             'participation' => $participation,
             'action' => 'participate',
             'deeplink' => $offer->deeplink,

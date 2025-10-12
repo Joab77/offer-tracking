@@ -38,7 +38,7 @@ const Register = () => {
             .then((res) => res.json())
             .then((data) => {
                 setCountry(data.country_code)
-                 
+
             })
             .catch(() => setCountry("FR")); // fallback France
     }, []);
@@ -48,13 +48,13 @@ const Register = () => {
 
         // on envoie le pays automatiquement avec les données
         const result = await registerUser({ ...data, country });
-       
+
         setIsLoading(false);
 
         if (result.success) {
-            
-            navigate('/dashboard');
-            
+
+            navigate('/');
+
         } else if (result.errors) {
             // si register() renvoie des erreurs de validation
             Object.keys(result.errors).forEach((field) => {

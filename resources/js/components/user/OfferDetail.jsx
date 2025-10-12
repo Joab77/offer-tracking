@@ -19,14 +19,12 @@ const OfferDetail = () => {
     const [offer, setOffer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [applying, setApplying] = useState(false);
-    const [hasApplied, setHasApplied] = useState(false);
     const { code, loading: geoLoading } = useLocation();
     const { user } = useAuth();
 
     useEffect(() => {
         if(!geoLoading && code) {
             fetchOffer(code);
-            checkParticipation();
         }
 
     }, [id, geoLoading, code]);
@@ -56,55 +54,55 @@ const OfferDetail = () => {
     };
 
 
-    const checkParticipation = async () => {
-        try {
-            const response = await axios.get('/api/participations');
-            const participation = response.data.data.find(p => p.offer_id === parseInt(id));
 
-            setHasApplied(!!participation);
-        } catch (error) {
-        }
-    };
+    const handleParticipate = async () => {
 
-    const handleParticipate = async (isApply = true) => {
-        if (!isApply) window.open(offer.deeplink, "_blank");
         try {
+            if (!offer?.deeplink) {
+                return Alert.error("Aucun lien d'offre disponible.");
+            }
+
+            if (!user?.id) {
+                return Alert.error("Utilisateur non identifié.");
+            }
+
             setApplying(true);
+
+            const url = new URL(offer.deeplink);
+            url.searchParams.set("ws", String(user.id));
+
             const response = await axios.post(
                 `/api/offers/${id}/apply`,
-                {}, // corps vide
                 {
-                    headers: {
-                        'X-Country': code
-                    }
-                }
+                    deeplink: url.toString()
+                },
+                { headers: { "X-Country": code } }
             );
 
-            if (response.data.action === 'continue') {
-                // L'utilisateur a déjà participé
-                Alert.info('Redirection vers votre mission...');
+            const { action, deeplink } = response.data;
+
+            if (action === "continue") {
+                Alert.info("Redirection vers votre mission...");
             } else {
-                // Nouvelle participation
-                Alert.success('Participation enregistrée avec succès !');
-                setHasApplied(true);
+                Alert.success("Participation enregistrée avec succès !");
             }
 
-            if (response.data.deeplink) {
-                const deeplink = response.data.deeplink;
+            if (deeplink) {
                 const url = new URL(deeplink);
-
-                // Remplace ou ajoute le param ws
-                url.searchParams.set('ws', String(user.id));
-
-                window.open(url, '_blank');
+                url.searchParams.set("ws", String(user.id));
+                window.open(url.toString(), "_blank");
             }
         } catch (error) {
-            const message = error.response?.data?.message || 'Erreur lors de la participation';
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                "Erreur lors de la participation";
             Alert.error(message);
         } finally {
             setApplying(false);
         }
     };
+
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -120,6 +118,7 @@ const OfferDetail = () => {
     const getStatusText = (status) => {
         return status;
     };
+
     if (loading) {
         return <LoadingSpinner />;
     }
@@ -173,55 +172,20 @@ const OfferDetail = () => {
 
                         {/* Actions */}
                         <div className="space-y-4">
-                            {hasApplied ? (
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0">
-                                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                                        </div>
-                                        <div className="ml-3">
-                                            <h3 className="text-sm font-medium text-green-800">Vous participez à cette offre</h3>
-                                            <div className="mt-2 text-sm text-green-700">
-                                                <p>
-                                                    Cliquez sur "Continuer la mission" pour accéder à nouveau au lien d'affiliation.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mt-4">
-                                        <button
-                                            onClick={() => handleParticipate(false)}
-                                            disabled={applying}
-                                            className="btn-secondary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {applying ? (
-                                                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-                                            ) : (
-                                                <>
-                                                    <LinkIcon className="h-4 w-4" />
-                                                    <span>Continuer la mission</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={handleParticipate}
-                                    disabled={applying}
-                                    className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {applying ? (
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            <LinkIcon className="h-5 w-5" />
-                                            <span>Participer à cette offre</span>
-                                        </>
-                                    )}
-                                </button>
-                            )}
-
+                            <button
+                                onClick={handleParticipate}
+                                disabled={applying}
+                                className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {applying ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <>
+                                        <LinkIcon className="h-5 w-5" />
+                                        <span>Participer à cette offre</span>
+                                    </>
+                                )}
+                            </button>
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <h4 className="text-sm font-medium text-blue-900 mb-2">
                                     Comment ça marche ?

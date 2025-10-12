@@ -39,12 +39,8 @@ class AuthController extends Controller
 
         $user->notify(new WelcomeNotification());
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
             'message' => 'Inscription réussie. Votre compte sera validé par un administrateur.',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
             'user' => $user
         ], 201);
     }
@@ -70,6 +66,13 @@ class AuthController extends Controller
                 'message' => 'Identifiants incorrects'
             ], 401);
         }
+
+        if (!$user->validated) {
+            return response()->json([
+                'message' => 'Votre compte est inactif. Veuillez contacter l’administrateur.',
+            ], 403);
+        }
+
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

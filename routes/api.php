@@ -48,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Gestion des utilisateurs
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::patch('/users/{user}/validate', [AdminUserController::class, 'validate']);
+        Route::patch('/users/{user}/deactivate', [AdminUserController::class, 'deactivate']);
+        Route::patch('/users/{user}/destroy', [AdminUserController::class, 'destroy']);
 
         // Gestion des offres
         Route::get('/offers', [AdminOfferController::class, 'index']);
