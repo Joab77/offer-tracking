@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UpdatePendingParticipationStatusSeeder::class,
-            ParticipationsForUserSeeder::class,
+           // ParticipationsForUserSeeder::class,
         ]);
 
     }

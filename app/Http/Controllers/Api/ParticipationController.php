@@ -28,7 +28,7 @@ class ParticipationController extends Controller
             ->where('status', 'approved')
             ->count();
         $opened = $user->participations()
-            ->where('status', 'opened')
+            ->where('status', 'open')
             ->count();
         $disapproved = $user->participations()
             ->where('status', 'disapproved')
@@ -38,7 +38,7 @@ class ParticipationController extends Controller
             "sold" => $sold,
             "total" => $sold + $opened + $disapproved,
             "approved" => $sold,
-            "opened" => $opened,
+            "open" => $opened,
             "disapproved" => $disapproved
         ]);
     }

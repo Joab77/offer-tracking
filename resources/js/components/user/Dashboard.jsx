@@ -66,7 +66,7 @@ const Dashboard = () => {
             case 'disapproved':
                 return 'Refusée';
             default:
-                return 'En attente';
+                return 'Open';
         }
     };
 
@@ -156,7 +156,7 @@ const Dashboard = () => {
                             <div className="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt className="text-sm font-medium text-gray-500 truncate">
-                                        En attente
+                                        Open
                                     </dt>
                                     <dd className="text-lg font-medium text-gray-900">
                                         {stats.pendingOffers}

@@ -15,7 +15,7 @@ const ParticipationsList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [filter, setFilter] = useState('all');
     const [balance, setBalance] = useState(0);
-    const [stats, setStats] = useState({ all: 0, opened: 0, approved: 0, disapproved: 0 });
+    const [stats, setStats] = useState({ all: 0, open: 0, approved: 0, disapproved: 0 });
 
     useEffect(() => {
         fetchParticipations(currentPage);
@@ -52,7 +52,7 @@ const ParticipationsList = () => {
         try {
             const response = await axios.get(`/api/get/user/sold`);
             let sold = response.data.sold;
-            setStats(() => ({ all: response.data.total, opened: response.data.opened, approved: response.data.approved, disapproved: response.data.disapproved }))
+            setStats(() => ({ all: response.data.total, open: response.data.open, approved: response.data.approved, disapproved: response.data.disapproved }))
             setBalance(sold)
         } catch (error) {
             console.error('Erreur lors du chargement des participations:', error);
@@ -78,7 +78,7 @@ const ParticipationsList = () => {
             case 'disapproved':
                 return 'Refusée';
             default:
-                return 'En attente';
+                return 'Open';
         }
     };
 
@@ -163,7 +163,7 @@ const ParticipationsList = () => {
             <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
                 {[
                     { key: 'all', label: 'Toutes' },
-                    { key: 'opened', label: 'Opened' },
+                    { key: 'open', label: 'Open' },
                     { key: 'approved', label: 'Approved' },
                     { key: 'disapproved', label: 'Disapproved' },
                 ].map((filterOption) => (

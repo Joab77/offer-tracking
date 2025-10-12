@@ -23,7 +23,7 @@ const ParticipationManagement = () => {
     const [stats, setStats] = useState({
         total: 0,
         approved: 0,
-        opened: 0,
+        open: 0,
         disapproved: 0,
     });
 
@@ -55,7 +55,7 @@ const ParticipationManagement = () => {
             setStats({
                 total: data.length,
                 approved: data.filter(p => p.status === 'approved').length,
-                opened: data.filter(p => p.status === 'opened').length,
+                open: data.filter(p => p.status === 'open').length,
                 disapproved: data.filter(p => p.status === 'disapproved').length,
             });
         } catch (error) {
@@ -192,10 +192,10 @@ const ParticipationManagement = () => {
                         <div className="ml-5 w-0 flex-1">
                             <dl>
                                 <dt className="text-sm font-medium text-gray-500 truncate">
-                                    Opened
+                                    Open
                                 </dt>
                                 <dd className="text-lg font-medium text-gray-900">
-                                    {stats.opened}
+                                    {stats.open}
                                 </dd>
                             </dl>
                         </div>
@@ -228,7 +228,7 @@ const ParticipationManagement = () => {
                     <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                         {[
                             { key: 'all', label: 'Toutes' },
-                            { key: 'opened', label: 'Opened' },
+                            { key: 'open', label: 'Open' },
                             { key: 'approved', label: 'Approved' },
                             { key: 'disapproved', label: 'Disapproved' },
                         ].map((filterOption) => (

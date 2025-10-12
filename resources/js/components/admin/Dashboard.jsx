@@ -37,7 +37,7 @@ const AdminDashboard = () => {
                 totalOffers: offers.length,
                 totalParticipations: participations.length,
                 validatedParticipations: participations.filter(p => p.status === 'approved').length,
-                pendingParticipations: participations.filter(p => p.status === 'opened').length,
+                pendingParticipations: participations.filter(p => p.status === 'open').length,
                 rejectedParticipations: participations.filter(p => p.status === 'disapproved').length,
             });
         } catch (error) {
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <ClockIcon className="h-5 w-5 text-yellow-500" />
-                                <span className="text-sm text-gray-600">En attente</span>
+                                <span className="text-sm text-gray-600">Open</span>
                             </div>
                             <span className="text-sm font-medium text-gray-900">
                                 {stats?.pendingParticipations || 0}
