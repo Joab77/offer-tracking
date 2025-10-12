@@ -106,6 +106,36 @@ const ParticipationsList = () => {
         return rawData?.transaction?.date ?? null;
     };
 
+    // Robust date formatter: accepts ISO strings or unix timestamps (seconds),
+    // falls back to participation.created_at when available.
+    const formatParticipationDate = (participation) => {
+        const raw = participation?.raw_data;
+        let dateValue = null;
+
+        if (raw?.transaction?.date) {
+            dateValue = raw.transaction.date;
+        } else if (participation?.created_at) {
+            dateValue = participation.created_at;
+        }
+
+        if (!dateValue) return null;
+
+        // If numeric string or number and likely seconds (length 10), convert to ms
+        if (typeof dateValue === 'number' || (/^\d+$/).test(String(dateValue))) {
+            const num = Number(dateValue);
+            // Distinguish seconds (10 digits) vs ms (13 digits)
+            if (String(num).length === 10) {
+                return new Date(num * 1000);
+            }
+            return new Date(num);
+        }
+
+        // Otherwise try ISO parse
+        const d = new Date(dateValue);
+        if (isNaN(d.getTime())) return null;
+        return d;
+    };
+
     if (loading && currentPage === 1) {
         return <LoadingSpinner />;
     }
@@ -153,54 +183,47 @@ const ParticipationsList = () => {
 
             {/* Liste des participations */}
             {participations.length > 0 ? (
-                <div className="space-y-4">
-                    {participations.map((participation) => (
-                        <div key={participation.id} className="card">
-                            <div className="flex items-start space-x-4">
-                                <div className="flex-shrink-0">
-                                    {getOfferStatusIcon(participation?.status)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <span>
-                                                {new Date(getDate(participation.raw_data)).toLocaleDateString('fr-FR', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
+                <div className="overflow-x-auto bg-white shadow sm:rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offre</th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
+                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                        {participations.map((participation, idx) => {
+                            const rowNumber = (pagination ? (pagination.current_page - 1) * pagination.per_page : 0) + idx + 1;
+                            const dateObj = formatParticipationDate(participation);
+                            const dateStr = dateObj
+                                ? dateObj.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                : '-';
+                            return (
+                                <tr key={participation.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rowNumber}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{dateStr}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">{participation.offer?.title}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
+                                        {participation?.commission ? `${participation.commission} €` : '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <div className="flex items-center justify-center space-x-2">
+                                            {getOfferStatusIcon(participation?.status)}
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation?.status)}`}>
+                                                {getOfferStatusText(participation?.status)}
                                             </span>
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                                {participation.offer?.title}
-                                            </h3>
-                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                {participation?.commission && (
-                                                    <div className="flex items-center space-x-1 text-green-600">
-                                                        <CurrencyEuroIcon className="h-4 w-4"/>
-                                                        <span className="font-medium">
-                                                            1€
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
                                         </div>
-                                        {
-                                            participation?.status &&
-                                            <div className="flex-shrink-0 ml-4">
-                                                <span
-                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getOfferStatusColor(participation?.status)}`}>
-                                                    {getOfferStatusText(participation?.status)}
-                                                </span>
-                                            </div>
-                                        }
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </table>
                 </div>
             ) : (
                 <div className="text-center py-12">

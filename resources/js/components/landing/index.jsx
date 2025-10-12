@@ -18,7 +18,7 @@ const LandingPage = () => {
 
 
     // Textes à afficher avec l'effet typing
-  const texts = ['Gagnez de l\'argent en', 'ligne avec Gain', 'Gains Exprex'];
+  const texts = ['Gagnez de l\'argent en', 'ligne avec Gains', 'Gains Exprex'];
 
   // Détection du scroll
   useEffect(() => {
@@ -244,7 +244,7 @@ const LandingPage = () => {
                   <p className="text-gray-600">Blogueuse</p>
                 </div>
               </div>
-              <p className="text-gray-700">"Grâce à GainExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
+              <p className="text-gray-700">"Grâce à GainsExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
             </div>
 
             {/* Testimonial 2 */}
@@ -258,7 +258,7 @@ const LandingPage = () => {
                   <p className="text-gray-600">Éditeur</p>
                 </div>
               </div>
-              <p className="text-gray-700">"Grâce à GainExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
+              <p className="text-gray-700">"Grâce à GainsExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
             </div>
 
             {/* Testimonial 3 */}
@@ -272,7 +272,7 @@ const LandingPage = () => {
                   <p className="text-gray-600">Influenceuse</p>
                 </div>
               </div>
-              <p className="text-gray-700">"Grâce à GainExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
+              <p className="text-gray-700">"Grâce à GainsExpress, j’ai pu monétiser mon blog sans effort supplémentaire."</p>
             </div>
           </div>
         </div>
@@ -294,7 +294,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-semibold mb-4">Gain Express</h3>
+              <h3 className="text-xl font-semibold mb-4">Gains Express</h3>
               <p className="text-gray-400">Nous vous fournissons les outils, les campagnes et le support pour maximiser vos revenus.</p>
             </div>
 

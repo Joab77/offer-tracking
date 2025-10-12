@@ -4,3 +4,5 @@ node_modules
 .idea
 vendor
 storage/logs/laravel.log
+# macOS Finder files
+.DS_Store
