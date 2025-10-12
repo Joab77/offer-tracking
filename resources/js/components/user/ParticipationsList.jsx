@@ -209,7 +209,9 @@ const ParticipationsList = () => {
                                         <div className="text-sm font-medium text-gray-900">{participation.offer?.title}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                                        {participation?.commission ? `${participation.commission} €` : '-'}
+                                        1€
+                                        {/* participation?.commission ? `${participation.commission} €` : '-' */}
+                                        
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                         <div className="flex items-center justify-center space-x-2">

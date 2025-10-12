@@ -52,7 +52,7 @@ const OffersList = () => {
         <div className="space-y-6">
             {/* En-tête */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Offres d'affiliation</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Missions</h1>
                 <p className="mt-1 text-sm text-gray-600">
                     Découvrez les offres disponibles dans votre pays et commencez à gagner des commissions.
                 </p>
