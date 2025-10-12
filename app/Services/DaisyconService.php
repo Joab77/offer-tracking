@@ -127,7 +127,7 @@ class DaisyconService
 
 
             if ($response->successful()) {
-                return $response->json();
+                return $response->json() ?? [];
             }
 
             Log::error('Erreur API Daisycon transactions', [
