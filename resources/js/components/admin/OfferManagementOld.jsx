@@ -134,7 +134,7 @@ const OfferManagement = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Gestion des offres</h1>
-                    <p className="mt-1 text-sm text-gray-600">Ajoutez, modifiez ou supprimez des offres d'affiliation.</p>
+                    <p className="mt-1 text-sm text-gray-600">Ajoutez, modifiez ou supprimez des missions.</p>
                 </div>
                 <button
                     onClick={openModalForCreate}

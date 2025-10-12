@@ -186,7 +186,7 @@ const OfferManagement = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Gestion des offres</h1>
                     <p className="mt-1 text-sm text-gray-600">
-                        Créez et gérez les offres d'affiliation disponibles sur la plateforme.
+                        Créez et gérez les missions disponibles sur la plateforme.
                     </p>
                 </div>
                 <button
@@ -315,7 +315,7 @@ const OfferManagement = () => {
                         <TagIcon className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune offre</h3>
                         <p className="mt-1 text-sm text-gray-500">
-                            Commencez par créer votre première offre d'affiliation.
+                            Commencez par créer votre première Mission.
                         </p>
                         <div className="mt-6">
                             <button

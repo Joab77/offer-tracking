@@ -183,7 +183,7 @@ const OfferDetail = () => {
                                             <h3 className="text-sm font-medium text-green-800">Vous participez à cette offre</h3>
                                             <div className="mt-2 text-sm text-green-700">
                                                 <p>
-                                                    Cliquez sur "Continuer la mission" pour accéder à nouveau au lien d'affiliation.
+                                                    Cliquez sur "Continuer la mission" pour accéder à nouveau au lien de la mission.
                                                 </p>
                                             </div>
                                         </div>
