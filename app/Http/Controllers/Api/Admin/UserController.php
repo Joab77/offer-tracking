@@ -61,8 +61,11 @@ class UserController extends Controller
         $user->update(['validated' => false]);
 
         $user->tokens()->delete();
+        
+        try {
         $user->notify(new AccountDeactivatedNotification());
-
+    } catch (\Exception $e) {}
+        
         return response()->json([
             'message' => 'Compte désactivé et tokens révoqués avec succès',
             'user' => $user

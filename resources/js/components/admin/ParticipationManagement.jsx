@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
 import {
@@ -13,36 +13,120 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ParticipationManagement = () => {
+    
     const [participations, setParticipations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [offers, setOffers] = useState([]);
+    const [loadingOffers, setLoadingOffers] = useState(false);
     const [statusFilter, setStatusFilter] = useState('all');
     const [selectedParticipation, setSelectedParticipation] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [stats, setStats] = useState({
-        total: 0,
-        approved: 0,
-        open: 0,
-        disapproved: 0,
+    total: 0, approved: 0, open: 0, disapproved: 0
+    });
+    const [filters, setFilters] = useState({
+    user_search: '',
+    offer_id: '',
+    status: 'all',
+    date_from: '',
+    date_to: '',
+    period: ''
     });
 
-    useEffect(() => {
-        fetchParticipations(currentPage);
-    }, [currentPage, statusFilter]);
+    // -- debouncedFilters ---
+    const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
-    const fetchParticipations = async (page = 1) => {
+// 1. Chargement des offres
+useEffect(() => {
+    const fetchOffers = async () => {
         try {
-            setLoading(true);
-            let url = `/api/admin/participations?page=${page}`;
+            setLoadingOffers(true);
+            const response = await axios.get('/api/admin/offers?simple=true');
+            setOffers(response.data);
+        } catch (error) {
+            console.error('Erreur lors du chargement des offres:', error);
+        } finally {
+            setLoadingOffers(false);
+        }
+    };
+    fetchOffers();
+}, []);
 
-            if (statusFilter !== 'all') {
-                url += `&status=${statusFilter}`;
+useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedFilters(filters);
+    // reset to first page when filters change
+    setCurrentPage(1);
+  }, 500);
+
+  return () => clearTimeout(handler);
+}, [filters]);
+
+// 2. Chargement principal des participations
+useEffect(() => {
+  // on charge quand la page ou les filtres "débounced" changent
+  fetchParticipations(currentPage, debouncedFilters);
+}, [currentPage, debouncedFilters]);
+
+// 3. Nettoyage
+useEffect(() => {
+    return () => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+    };
+}, []);
+  /*   const fetchParticipations = async (page = 1) => {
+
+             try {
+            setLoading(true);
+            
+            const params = new URLSearchParams({
+                page: page,
+                ...filters
+            });
+
+            // Supprimer les filtres vides
+            Array.from(params.entries()).forEach(([key, value]) => {
+                if (!value || value === 'all') {
+                    params.delete(key);
+                }
+            });
+
+            const response = await axios.get(`/api/admin/participations?${params}`);
+            const data = response.data;
+
+            setParticipations(data.data);
+            setPagination({
+                current_page: data.current_page,
+                last_page: data.last_page,
+                total: data.total,
+                per_page: data.per_page,
+            });
+
+            if (data.offers) {
+                setOffers(data.offers);
             }
 
-            const response = await axios.get(url);
+        } catch (error) {
+            console.error('Erreur lors du chargement des participations:', error);
+        } finally {
+            setLoading(false);
+        }
+         // Calculer les statistiques
+         if (statusFilter !== 'all') {
+                url += `&status=${statusFilter}`;
+            }
+            const response = await axios.get(`/api/admin/participations?${params}`);
             const data = response.data.data;
-
+            setStats({
+                total: data.length,
+                approved: data.filter(p => p.status === 'approved').length,
+                open: data.filter(p => p.status === 'open').length,
+                disapproved: data.filter(p => p.status === 'disapproved').length,
+            });
             setParticipations(data);
             setPagination({
                 current_page: response.data.current_page,
@@ -50,29 +134,91 @@ const ParticipationManagement = () => {
                 total: response.data.total,
                 per_page: response.data.per_page,
             });
+          
+    }; */
 
-            // Calculer les statistiques
-            setStats({
-                total: data.length,
-                approved: data.filter(p => p.status === 'approved').length,
-                open: data.filter(p => p.status === 'open').length,
-                disapproved: data.filter(p => p.status === 'disapproved').length,
-            });
-        } catch (error) {
-            console.error('Erreur lors du chargement des participations:', error);
-        } finally {
-            setLoading(false);
-        }
+
+    const fetchParticipations = async (page = 1, appliedFilters = {}) => {
+  try {
+    setLoading(true);
+
+    // Construire params proprement
+    const paramsObj = { page, ...appliedFilters };
+
+    // Supprimer propriétés vides ou "all"
+    Object.keys(paramsObj).forEach(key => {
+      const val = paramsObj[key];
+      if (val === '' || val === null || val === undefined || val === 'all') {
+        delete paramsObj[key];
+      }
+    });
+
+    const response = await axios.get('/api/admin/participations', { params: paramsObj });
+    const data = response.data;
+
+    // Assumer réponse paginée standard : data.data (items) + meta/pagination
+    setParticipations(data.data || []);
+    setPagination({
+      current_page: data.current_page ?? data.meta?.current_page ?? page,
+      last_page: data.last_page ?? data.meta?.last_page ?? 1,
+      total: data.total ?? data.meta?.total ?? (data.data ? data.data.length : 0),
+      per_page: data.per_page ?? data.meta?.per_page ?? (data.data ? data.data.length : 0),
+    });
+
+    // Calculer stats localement si les items sont fournis
+    const items = data.data || [];
+    setStats({
+      total: items.length,
+      approved: items.filter(p => p.status === 'approved').length,
+      open: items.filter(p => p.status === 'open').length,
+      disapproved: items.filter(p => p.status === 'disapproved').length,
+    });
+
+    // Si le backend renvoie les offres en même payload, on les met à jour (optionnel)
+    if (data.offers) {
+      setOffers(data.offers);
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des participations:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+// AJOUTER cette nouvelle fonction
+      const handleUserSearchChange = (value) => {
+        setFilters(prev => ({
+            ...prev,
+            user_search: value
+        }));
+        // Ne pas appeler setCurrentPage ici : il est appelé par le debounce effect
+        };
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [key]: value
+        }));
     };
+    const resetFilters = () => {
+        setFilters({
+            user_search: '',
+            offer_id: '',
+            status: 'all',
+            date_from: '',
+            date_to: '',
+            period: ''
+        });
+    };
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
 
     const handleStatusFilterChange = (status) => {
         setStatusFilter(status);
         setCurrentPage(1);
     };
 
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
-    };
 
     const openDetailModal = (participation) => {
         setSelectedParticipation(participation);
@@ -145,8 +291,7 @@ const ParticipationManagement = () => {
                     Suivez toutes les participations des utilisateurs aux missions.
                 </p>
             </div>
-
-            {/* Statistiques */}
+             {/* Statistiques */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
                 <div className="card">
                     <div className="flex items-center">
@@ -221,32 +366,141 @@ const ParticipationManagement = () => {
                 </div>
             </div>
 
-            {/* Filtres */}
+            {/* Nouvelle section Filtres avancés */}
             <div className="card">
-                <div className="flex items-center space-x-4">
-                    <FunnelIcon className="h-5 w-5 text-gray-400" />
-                    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-                        {[
-                            { key: 'all', label: 'Toutes' },
-                            { key: 'open', label: 'Open' },
-                            { key: 'approved', label: 'Approved' },
-                            { key: 'disapproved', label: 'Disapproved' },
-                        ].map((filterOption) => (
-                            <button
-                                key={filterOption.key}
-                                onClick={() => handleStatusFilterChange(filterOption.key)}
-                                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                                    statusFilter === filterOption.key
-                                        ? 'bg-white text-gray-900 shadow-sm'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            >
-                                {filterOption.label}
-                            </button>
-                        ))}
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Filtres avancés</h3>
+                    <button
+                        onClick={resetFilters}
+                        className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                        Réinitialiser
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Filtre Utilisateur */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Utilisateur
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Nom ou email..."
+                                value={filters.user_search}
+                                onChange={(e) => handleUserSearchChange(e.target.value)}  // 🔥 CHANGER ici
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                        </div>
+                   
+                
+                    {/* Filtre Offre */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Offre
+                        </label>
+                        <select
+                            value={filters.offer_id}
+                            onChange={(e) => handleFilterChange('offer_id', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                            <option value="">Toutes les offres</option>
+                            {offers.map(offer => (
+                                <option key={offer.id} value={offer.id}>
+                                    {offer.title}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Filtre Statut */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Statut
+                        </label>
+                        <select
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                            <option value="all">Tous les statuts</option>
+                            <option value="open">Open</option>
+                            <option value="approved">Approved</option>
+                            <option value="disapproved">Disapproved</option>
+                        </select>
+                    </div>
+
+                    {/* Filtre Période */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Période
+                        </label>
+                        <select
+                            value={filters.period}
+                            onChange={(e) => handleFilterChange('period', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                            <option value="">Toutes les dates</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="yesterday">Hier</option>
+                            <option value="week">7 derniers jours</option>
+                            <option value="month">30 derniers jours</option>
+                            <option value="year">Cette année</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Dates personnalisées */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Date de début
+                        </label>
+                        <input
+                            type="date"
+                            value={filters.date_from}
+                            onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Date de fin
+                        </label>
+                        <input
+                            type="date"
+                            value={filters.date_to}
+                            onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
                     </div>
                 </div>
             </div>
+
+            {/* Indicateur de filtres actifs */}
+            {(filters.user_search || filters.offer_id || filters.status !== 'all' || filters.period || filters.date_from || filters.date_to) && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-700">
+                            Filtres actifs: 
+                            {filters.user_search && ` Utilisateur: "${filters.user_search}"`}
+                            {filters.offer_id && ` Offre: ${offers.find(o => o.id == filters.offer_id)?.title}`}
+                            {filters.status !== 'all' && ` Statut: ${filters.status}`}
+                            {filters.period && ` Période: ${filters.period}`}
+                            {(filters.date_from || filters.date_to) && ` Dates personnalisées`}
+                        </span>
+                        <span className="text-sm text-blue-600">
+                            {pagination?.total || 0} résultat(s)
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Votre tableau existant des participations */}
+
+           
+
+           
 
             {/* Liste des participations */}
             <div className="card">

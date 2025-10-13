@@ -4,8 +4,10 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-class AccountDeactivatedNotification
+
+class AccountDeactivatedNotification extends Notification
 {
     use Queueable;
 
