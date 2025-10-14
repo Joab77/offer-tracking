@@ -105,26 +105,25 @@ class DaisyconService
                 return [];
             }
 
-            $lastSync = Setting::get('daisycon_last_sync');
+            //$lastSync = Setting::get('daisycon_last_sync');
 
             $params = [
                 'page' => $page,
-                'limit' => $limit,
+                'per_page' => $limit,
                 'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
                 'end'   => now()->endOfMonth()->format('Y-m-d H:i:s'),
                 'order_by' => 'date',
-                'order_direction' => 'desc',
+                'order_direction' => 'desc'
             ];
 
-            if ($lastSync) {
-                $params['date_modified_start'] = \Carbon\Carbon::parse($lastSync)->format('Y-m-d H:i:s');
-            }
+//            if ($lastSync) {
+//                $params['date_modified_start'] = \Carbon\Carbon::parse($lastSync)->format('Y-m-d H:i:s');
+//            }
 
             $response = Http::withToken($this->accessToken)->get(
                 self::BASE_URL . "/publishers/{$this->publisherId}/transactions",
                 $params
             );
-
 
             if ($response->successful()) {
                 return $response->json() ?? [];
@@ -173,8 +172,9 @@ class DaisyconService
     private function processTransaction(array $transaction): bool
     {
         $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
+        dump("transaction_id", $affiliatemarketingId);
         $programId = $transaction['program_id'] ?? null;
-
+        dump("program id", $programId);
         if (!$affiliatemarketingId || !$programId) {
             Log::warning('Transaction incomplète', ['transaction' => $transaction]);
             return false;
@@ -182,6 +182,7 @@ class DaisyconService
         // Trouver l'offre correspondante par program_id
         // Note: Il faudra ajouter un champ program_id dans offers ou utiliser une autre logique de mapping
         $offer = $this->findOfferByProgramId($programId);
+        dump("Offer", $offer);
         if (!$offer) {
             Log::info('Offre non trouvée pour program_id: ' . $programId);
             return false;
@@ -198,15 +199,19 @@ class DaisyconService
 
     private function processTransactionPart(Offer $offer, array $transaction, array $part): void
     {
-        $transactionId = $transaction['affiliatemarketing_id'] . '_' . $part['id'];
+        $transactionId = $transaction['affiliatemarketing_id'];
+
 
         $participation = Participation::findByTransactionId($transactionId);
+
+        dump("old participation", $participation);
 
         $participationData = [
             'transaction_id' => $transactionId,
             'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
             'commission' => "1",
             'currency_code' => "€",
+            'date' => $transaction['date'],
             'raw_data' => [
                 'transaction' => $transaction,
                 'part' => $part,
@@ -214,43 +219,26 @@ class DaisyconService
             'offer_id' => $offer->id,
         ];
 
+        dump("new participation data", $participationData);
+
         if (!empty($part['subid'])) {
             $participationData['user_id'] = $part['subid'];
         }
 
-        if ($participation) {
-            $participation->update($participationData);
+        dump("new participation data user id", $part['subid']);
 
-            Log::info('Participation mise à jour', [
-                'participation_id' => $participation->id,
-                'transaction_id' => $transactionId,
-            ]);
-            return;
-        }
+        $participation = Participation::updateOrCreate(
+            ['transaction_id' => $transactionId],
+            $participationData
+        );
 
-        if (isset($participationData['user_id'])) {
-            $record = Participation::updateOrCreate(
-                ['offer_id' => $offer->id, 'user_id' => $participationData['user_id']],
-                $participationData
-            );
+        dump("new participation", $participation);
 
-            Log::info('Nouvelle participation Daisycon créée', [
-                'participation_id' => $record->id,
-                'transaction_id' => $transactionId,
-                'offer_id' => $offer->id,
-                'has_user' => true,
-            ]);
-            return;
-        }
-
-        $record = Participation::create($participationData);
-
-        Log::info('Nouvelle participation Daisycon créée', [
-            'participation_id' => $record->id,
+        Log::info('Participation mise à jour', [
+            'participation_id' => $participation->id,
             'transaction_id' => $transactionId,
-            'offer_id' => $offer->id,
-            'has_user' => false,
         ]);
+
     }
 
     private function findOfferByProgramId(int $programId): ?Offer

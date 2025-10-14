@@ -12,7 +12,7 @@ class ParticipationController extends Controller
 {
     public function index(Request $request)
     {
-    
+
         $query = Participation::with(['user', 'offer']);
          // Exclure les participations sans statut
         $query->whereNotNull('status');
@@ -60,7 +60,7 @@ class ParticipationController extends Controller
             $query->where('created_at', '>=', $this->getDateFromPeriod($request->period));
         }
 
-        $participations = $query->latest()->paginate(20);
+        $participations = $query->orderBy('date', 'desc')->paginate(20);
          // Récupérer la liste des offres pour le filtre
         $offers = Offer::select('id', 'title')->get();
 

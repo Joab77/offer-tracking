@@ -17,7 +17,8 @@ class Participation extends Model
         'commission',
         'currency_code',
         'raw_data',
-        'deeplink'
+        'deeplink',
+        'date'
     ];
 
     protected $casts = [

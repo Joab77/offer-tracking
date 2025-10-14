@@ -61,29 +61,10 @@ class OfferController extends Controller
             ], 403);
         }
 
-        if ($offer->hasUserParticipated($user->id)) {
-            return response()->json([
-                'message' => 'Vous avez déjà participé à cette offre',
-                'action' => 'continue',
-                'deeplink' => $offer->deeplink
-            ], 200);
-        }
-
-        $participation = Participation::updateOrCreate(
-            [
-                'user_id' => $user->id,
-                'offer_id' => $offer->id,
-            ],
-            [
-                'deeplink' => $request->deeplink
-            ]
-        );
-
         return response()->json([
             'message' => 'Participation enregistrée avec succès',
-            'participation' => $participation,
             'action' => 'participate',
-            'deeplink' => $offer->deeplink,
+            'deeplink' => $request->deeplink,
         ]);
     }
 }

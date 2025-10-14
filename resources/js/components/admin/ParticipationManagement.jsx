@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ParticipationManagement = () => {
-    
+
     const [participations, setParticipations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
@@ -38,51 +38,45 @@ const ParticipationManagement = () => {
     // -- debouncedFilters ---
     const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
-// 1. Chargement des offres
-useEffect(() => {
-    const fetchOffers = async () => {
-        try {
-            setLoadingOffers(true);
-            const response = await axios.get('/api/admin/offers?simple=true');
-            setOffers(response.data);
-        } catch (error) {
-            console.error('Erreur lors du chargement des offres:', error);
-        } finally {
-            setLoadingOffers(false);
-        }
-    };
-    fetchOffers();
-}, []);
+    // 1. Chargement des offres
+    useEffect(() => {
+        const fetchOffers = async () => {
+            try {
+                setLoadingOffers(true);
+                const response = await axios.get('/api/admin/offers?simple=true');
+                setOffers(response.data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des offres:', error);
+            } finally {
+                setLoadingOffers(false);
+            }
+        };
+        fetchOffers();
+    }, []);
 
-useEffect(() => {
-  const handler = setTimeout(() => {
-    setDebouncedFilters(filters);
-    // reset to first page when filters change
-    setCurrentPage(1);
-  }, 500);
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedFilters(filters);
+        // reset to first page when filters change
+        setCurrentPage(1);
+      }, 500);
 
-  return () => clearTimeout(handler);
-}, [filters]);
+      return () => clearTimeout(handler);
+    }, [filters]);
 
-// 2. Chargement principal des participations
-useEffect(() => {
-  // on charge quand la page ou les filtres "débounced" changent
-  fetchParticipations(currentPage, debouncedFilters);
-}, [currentPage, debouncedFilters]);
+    // 2. Chargement principal des participations
+    useEffect(() => {
+      // on charge quand la page ou les filtres "débounced" changent
+      fetchParticipations(currentPage, debouncedFilters);
+    }, [currentPage, debouncedFilters]);
 
-// 3. Nettoyage
-useEffect(() => {
-    return () => {
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-    };
-}, []);
+    // 3. Nettoyage
+
   /*   const fetchParticipations = async (page = 1) => {
 
              try {
             setLoading(true);
-            
+
             const params = new URLSearchParams({
                 page: page,
                 ...filters
@@ -134,57 +128,57 @@ useEffect(() => {
                 total: response.data.total,
                 per_page: response.data.per_page,
             });
-          
+
     }; */
 
 
     const fetchParticipations = async (page = 1, appliedFilters = {}) => {
-  try {
-    setLoading(true);
+      try {
+        setLoading(true);
 
-    // Construire params proprement
-    const paramsObj = { page, ...appliedFilters };
+        // Construire params proprement
+        const paramsObj = { page, ...appliedFilters };
 
-    // Supprimer propriétés vides ou "all"
-    Object.keys(paramsObj).forEach(key => {
-      const val = paramsObj[key];
-      if (val === '' || val === null || val === undefined || val === 'all') {
-        delete paramsObj[key];
+        // Supprimer propriétés vides ou "all"
+        Object.keys(paramsObj).forEach(key => {
+          const val = paramsObj[key];
+          if (val === '' || val === null || val === undefined || val === 'all') {
+            delete paramsObj[key];
+          }
+        });
+
+        const response = await axios.get('/api/admin/participations', { params: paramsObj });
+        const data = response.data;
+
+        // Assumer réponse paginée standard : data.data (items) + meta/pagination
+        setParticipations(data.data || []);
+        setPagination({
+          current_page: data.current_page ?? data.meta?.current_page ?? page,
+          last_page: data.last_page ?? data.meta?.last_page ?? 1,
+          total: data.total ?? data.meta?.total ?? (data.data ? data.data.length : 0),
+          per_page: data.per_page ?? data.meta?.per_page ?? (data.data ? data.data.length : 0),
+        });
+
+        // Calculer stats localement si les items sont fournis
+        const items = data.data || [];
+        setStats({
+          total: items.length,
+          approved: items.filter(p => p.status === 'approved').length,
+          open: items.filter(p => p.status === 'open').length,
+          disapproved: items.filter(p => p.status === 'disapproved').length,
+        });
+
+        // Si le backend renvoie les offres en même payload, on les met à jour (optionnel)
+        if (data.offers) {
+          setOffers(data.offers);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des participations:', error);
+      } finally {
+        setLoading(false);
       }
-    });
-
-    const response = await axios.get('/api/admin/participations', { params: paramsObj });
-    const data = response.data;
-
-    // Assumer réponse paginée standard : data.data (items) + meta/pagination
-    setParticipations(data.data || []);
-    setPagination({
-      current_page: data.current_page ?? data.meta?.current_page ?? page,
-      last_page: data.last_page ?? data.meta?.last_page ?? 1,
-      total: data.total ?? data.meta?.total ?? (data.data ? data.data.length : 0),
-      per_page: data.per_page ?? data.meta?.per_page ?? (data.data ? data.data.length : 0),
-    });
-
-    // Calculer stats localement si les items sont fournis
-    const items = data.data || [];
-    setStats({
-      total: items.length,
-      approved: items.filter(p => p.status === 'approved').length,
-      open: items.filter(p => p.status === 'open').length,
-      disapproved: items.filter(p => p.status === 'disapproved').length,
-    });
-
-    // Si le backend renvoie les offres en même payload, on les met à jour (optionnel)
-    if (data.offers) {
-      setOffers(data.offers);
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des participations:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-// AJOUTER cette nouvelle fonction
+    };
+    // AJOUTER cette nouvelle fonction
       const handleUserSearchChange = (value) => {
         setFilters(prev => ({
             ...prev,
@@ -392,8 +386,8 @@ useEffect(() => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                             />
                         </div>
-                   
-                
+
+
                     {/* Filtre Offre */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -482,7 +476,7 @@ useEffect(() => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-blue-700">
-                            Filtres actifs: 
+                            Filtres actifs:
                             {filters.user_search && ` Utilisateur: "${filters.user_search}"`}
                             {filters.offer_id && ` Offre: ${offers.find(o => o.id == filters.offer_id)?.title}`}
                             {filters.status !== 'all' && ` Statut: ${filters.status}`}
@@ -498,9 +492,9 @@ useEffect(() => {
 
             {/* Votre tableau existant des participations */}
 
-           
 
-           
+
+
 
             {/* Liste des participations */}
             <div className="card">
