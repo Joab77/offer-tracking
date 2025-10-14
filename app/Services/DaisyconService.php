@@ -172,9 +172,9 @@ class DaisyconService
     private function processTransaction(array $transaction): bool
     {
         $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
-        dump("transaction_id", $affiliatemarketingId);
+        
         $programId = $transaction['program_id'] ?? null;
-        dump("program id", $programId);
+        
         if (!$affiliatemarketingId || !$programId) {
             Log::warning('Transaction incomplète', ['transaction' => $transaction]);
             return false;
@@ -182,7 +182,7 @@ class DaisyconService
         // Trouver l'offre correspondante par program_id
         // Note: Il faudra ajouter un champ program_id dans offers ou utiliser une autre logique de mapping
         $offer = $this->findOfferByProgramId($programId);
-        dump("Offer", $offer);
+        
         if (!$offer) {
             Log::info('Offre non trouvée pour program_id: ' . $programId);
             return false;
@@ -204,8 +204,7 @@ class DaisyconService
 
         $participation = Participation::findByTransactionId($transactionId);
 
-        dump("old participation", $participation);
-
+        
         $participationData = [
             'transaction_id' => $transactionId,
             'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
@@ -219,20 +218,20 @@ class DaisyconService
             'offer_id' => $offer->id,
         ];
 
-        dump("new participation data", $participationData);
+        
 
         if (!empty($part['subid'])) {
             $participationData['user_id'] = $part['subid'];
         }
 
-        dump("new participation data user id", $part['subid']);
+        
 
         $participation = Participation::updateOrCreate(
             ['transaction_id' => $transactionId],
             $participationData
         );
 
-        dump("new participation", $participation);
+        
 
         Log::info('Participation mise à jour', [
             'participation_id' => $participation->id,

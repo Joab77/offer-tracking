@@ -49,15 +49,15 @@ class ParticipationController extends Controller
         }
         // Filtre par date
         if ($request->has('date_from') && !empty($request->date_from)) {
-            $query->whereDate('created_at', '>=', $request->date_from);
+            $query->whereDate('date', '>=', $request->date_from);
         }
 
         if ($request->has('date_to') && !empty($request->date_to)) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+            $query->whereDate('date', '<=', $request->date_to);
         }
         // Filtre par période prédéfinie
         if ($request->has('period') && !empty($request->period)) {
-            $query->where('created_at', '>=', $this->getDateFromPeriod($request->period));
+            $query->where('date', '>=', $this->getDateFromPeriod($request->period));
         }
 
         $participations = $query->orderBy('date', 'desc')->paginate(20);
