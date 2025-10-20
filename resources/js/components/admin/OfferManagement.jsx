@@ -129,12 +129,17 @@ const OfferManagement = () => {
     };
 
     const handleDelete = async (offerId) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) {
-            return;
-        }
-
         try {
+            // Demande de confirmation via SweetAlert
+            const result = await Alert.confirm(
+                "Êtes-vous sûr de vouloir supprimer cette offre ? Cette action entraînera la suppression de toutes les participations liées à l'offre."
+            );
+
+            // Si l'utilisateur annule, on sort
+            if (!result.isConfirmed) return;
+
             setDeleting(offerId);
+
             await axios.delete(`/api/admin/offers/${offerId}`);
             Alert.success('Offre supprimée avec succès !');
             fetchOffers(currentPage);

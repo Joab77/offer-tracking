@@ -12,10 +12,12 @@ class ParticipationController extends Controller
         $user = $request->user();
 
         $participations = $user->participations()
-            ->whereNotNull('status') // Exclure les participations avec un status null
+            ->whereNotNull('status')
             ->with('offer')
-            ->latest()
-            ->paginate(20);
+            ->orderBy('date', 'desc')
+            ->paginate(5);
+
+
 
         return response()->json($participations);
     }

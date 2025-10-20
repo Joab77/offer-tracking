@@ -399,7 +399,7 @@ const ParticipationManagement = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                         >
                             <option value="">Toutes les offres</option>
-                            {offers.map(offer => (
+                            {offers && offers.length > 0 && offers.map(offer => (
                                 <option key={offer.id} value={offer.id}>
                                     {offer.title}
                                 </option>

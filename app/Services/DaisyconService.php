@@ -105,36 +105,61 @@ class DaisyconService
                 return [];
             }
 
-            //$lastSync = Setting::get('daisycon_last_sync');
+            $allTransactions = [];
+            $hasMore = true;
 
-            $params = [
-                'page' => $page,
-                'per_page' => $limit,
-                'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
-                'end'   => now()->endOfMonth()->format('Y-m-d H:i:s'),
-                'order_by' => 'date',
-                'order_direction' => 'desc'
-            ];
+            while ($hasMore) {
+                $params = [
+                    'page' => $page,
+                    'per_page' => $limit,
+                    'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
+                    'end'   => now()->endOfMonth()->format('Y-m-d H:i:s'),
+                    'order_by' => 'date',
+                    'order_direction' => 'desc'
+                ];
 
-//            if ($lastSync) {
-//                $params['date_modified_start'] = \Carbon\Carbon::parse($lastSync)->format('Y-m-d H:i:s');
-//            }
+                $response = Http::withToken($this->accessToken)->get(
+                    self::BASE_URL . "/publishers/{$this->publisherId}/transactions",
+                    $params
+                );
 
-            $response = Http::withToken($this->accessToken)->get(
-                self::BASE_URL . "/publishers/{$this->publisherId}/transactions",
-                $params
-            );
+                if (!$response->successful()) {
+                    Log::error('Erreur API Daisycon transactions', [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                        'page' => $page,
+                    ]);
+                    break;
+                }
 
-            if ($response->successful()) {
-                return $response->json() ?? [];
+                $data = $response->json() ?? [];
+                $allTransactions = array_merge($allTransactions, $data);
+
+                // Récupération des infos de pagination depuis les headers
+                $perPage = (int) $response->header('X-Paginator-Per-Page', $limit);
+                $currentPage = (int) $response->header('X-Paginator-Page', $page);
+                $totalCount = (int) $response->header('X-Total-Count', 0);
+
+                // Calcul du nombre total de pages
+                $totalPages = (int) ceil($totalCount / $perPage);
+
+                Log::info("Pagination Daisycon", [
+                    'page' => $currentPage,
+                    'total_pages' => $totalPages,
+                    'count' => count($data),
+                ]);
+
+                // Vérifie s'il reste d'autres pages
+                $hasMore = $currentPage < $totalPages;
+
+                if ($hasMore) {
+                    $page++;
+                    // Petite pause pour éviter d’éventuels rate limits
+                    usleep(300000); // 0.3 seconde
+                }
             }
 
-            Log::error('Erreur API Daisycon transactions', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            return [];
+            return $allTransactions;
         } catch (\Exception $e) {
             Log::error('Exception lors de l\'appel API Daisycon transactions', [
                 'message' => $e->getMessage(),
@@ -172,23 +197,21 @@ class DaisyconService
     private function processTransaction(array $transaction): bool
     {
         $affiliatemarketingId = $transaction['affiliatemarketing_id'] ?? null;
-        
+
         $programId = $transaction['program_id'] ?? null;
-        
+
         if (!$affiliatemarketingId || !$programId) {
             Log::warning('Transaction incomplète', ['transaction' => $transaction]);
             return false;
         }
-        // Trouver l'offre correspondante par program_id
-        // Note: Il faudra ajouter un champ program_id dans offers ou utiliser une autre logique de mapping
+
         $offer = $this->findOfferByProgramId($programId);
-        
+
         if (!$offer) {
             Log::info('Offre non trouvée pour program_id: ' . $programId);
             return false;
         }
 
-        // Traiter chaque part de la transaction
         foreach ($transaction['parts'] as &$part) {
             $part['commission'] = "1";
             $this->processTransactionPart($offer, $transaction, $part);
@@ -201,10 +224,6 @@ class DaisyconService
     {
         $transactionId = $transaction['affiliatemarketing_id'];
 
-
-        $participation = Participation::findByTransactionId($transactionId);
-
-        
         $participationData = [
             'transaction_id' => $transactionId,
             'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
@@ -218,20 +237,20 @@ class DaisyconService
             'offer_id' => $offer->id,
         ];
 
-        
+
 
         if (!empty($part['subid'])) {
             $participationData['user_id'] = $part['subid'];
         }
 
-        
+
 
         $participation = Participation::updateOrCreate(
             ['transaction_id' => $transactionId],
             $participationData
         );
 
-        
+
 
         Log::info('Participation mise à jour', [
             'participation_id' => $participation->id,
