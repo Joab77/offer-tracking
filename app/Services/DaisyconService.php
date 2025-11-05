@@ -100,6 +100,7 @@ class DaisyconService
 
     public function getTransactions(int $page = 1, int $limit = 1000): array
     {
+        
         try {
             if (!$this->accessToken && !$this->authenticate()) {
                 return [];
@@ -112,7 +113,7 @@ class DaisyconService
                 $params = [
                     'page' => $page,
                     'per_page' => $limit,
-                    'start' => now()->startOfMonth()->format('Y-m-d H:i:s'),
+                    'start' => now()->subMonths(3)->format('Y-m-d H:i:s'),
                     'end'   => now()->endOfMonth()->format('Y-m-d H:i:s'),
                     'order_by' => 'date',
                     'order_direction' => 'desc'
@@ -133,8 +134,11 @@ class DaisyconService
                 }
 
                 $data = $response->json() ?? [];
+                 
                 $allTransactions = array_merge($allTransactions, $data);
 
+
+              
                 // Récupération des infos de pagination depuis les headers
                 $perPage = (int) $response->header('X-Paginator-Per-Page', $limit);
                 $currentPage = (int) $response->header('X-Paginator-Page', $page);
@@ -158,7 +162,7 @@ class DaisyconService
                     usleep(300000); // 0.3 seconde
                 }
             }
-
+           
             return $allTransactions;
         } catch (\Exception $e) {
             Log::error('Exception lors de l\'appel API Daisycon transactions', [
@@ -222,28 +226,37 @@ class DaisyconService
 
     private function processTransactionPart(Offer $offer, array $transaction, array $part): void
     {
+        
+         // Créer un ID unique qui combine l'ID de transaction et l'ID de la part
+        $transactionId = $transaction['affiliatemarketing_id'] . '_' . $part['id'];
+              // Ajout de logs pour debug
+              // Debug logs pour voir exactement ce que Daisycon envoie
+   
         $transactionId = $transaction['affiliatemarketing_id'];
 
-        $participationData = [
-            'transaction_id' => $transactionId,
-            'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
-            'commission' => "1",
-            'currency_code' => "€",
-            'date' => $transaction['date'],
-            'raw_data' => [
-                'transaction' => $transaction,
-                'part' => $part,
-            ],
-            'offer_id' => $offer->id,
-        ];
-
+          $participationData = [
+        'transaction_id' => $transactionId,
+        'status' => $this->mapDaisyconStatus($part['status'] ?? ''),
+        'commission' => $part['commission'] ?? "1",
+        'currency_code' => $part['currency_code'] ?? "€",
+        'date' => $transaction['date'],
+        'raw_data' => [
+            'transaction' => $transaction,
+            'part' => $part,
+        ],
+        'offer_id' => $offer->id,
+    ];
 
 
         if (!empty($part['subid'])) {
             $participationData['user_id'] = $part['subid'];
         }
 
-
+// Log avant mise à jour
+    Log::info('Status mapping', [
+        'original_status' => $part['status'] ?? 'non défini',
+        'mapped_status' => $participationData['status']
+    ]);
 
         $participation = Participation::updateOrCreate(
             ['transaction_id' => $transactionId],
@@ -268,10 +281,12 @@ class DaisyconService
     private function mapDaisyconStatus(string $daisyconStatus): string
     {
         return match (strtolower($daisyconStatus)) {
-            'approved' => 'approved',
-            'disapproved' => 'disapproved',
-            'open' => 'open'
-        };
+        'A', 'approved' => 'approved',
+        'R', 'rejected', 'disapproved' => 'disapproved',
+        'O', 'open', 'pending' => 'open',
+        default => 'open'
+    };
+       
     }
 
     public function getLastSyncInfo(): array
